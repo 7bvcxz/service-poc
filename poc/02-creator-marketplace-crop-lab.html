@@ -1,118 +1,114 @@
 <!doctype html>
 <html lang="ko">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CreatorMarketplaceCropLab — Service POC 02</title>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f6f2">
+<title>상품 사진, 한 번에 4가지 비율로 · Crop Lab</title>
 <style>
-:root{font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;background:#0b1220;color:#eff6ff}*{box-sizing:border-box}
-body{margin:0;background:radial-gradient(circle at 80% -10%,#183b5e,transparent 50%),#0b1220;min-height:100vh}main{max-width:1120px;margin:auto;padding:24px 18px 64px}
-a{color:#91c7ff;text-decoration:none}h1{font-size:clamp(28px,5vw,48px);letter-spacing:-.05em;margin:15px 0 8px}p{color:#b3c2d6}
-.header{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}
-.meta{color:#88a3c1;font-size:12px}.layout{display:grid;grid-template-columns:315px minmax(0,1fr);gap:18px;margin-top:24px}
-.card{background:#131f32;border:1px solid #2e445f;border-radius:18px;padding:20px}.card h2{font-size:17px;margin:0 0 14px}
-.file{display:block;padding:16px;border:1px dashed #6381aa;border-radius:12px;background:#1a2b45;cursor:pointer;text-align:center}
-.file:hover{border-color:#a9d1ff}.file input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
-fieldset{border:0;padding:0;margin:20px 0}legend{font-weight:700;margin:0 0 10px}
-.preset{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.preset button{background:#20344e;color:#d9e7f7;border:1px solid #3a5679;padding:11px 8px;border-radius:10px;cursor:pointer}
-.preset button[aria-pressed=true]{background:#2168a3;color:white;border-color:#72bafc}
-button.primary{padding:14px 18px;width:100%;border:0;border-radius:11px;color:#081a2b;background:#8fc9ff;font-weight:750;cursor:pointer}
-button:focus-visible,.file:focus-within{outline:3px solid white;outline-offset:2px}
-.row{display:flex;justify-content:space-between;align-items:center;gap:10px}input[type=range]{width:100%;accent-color:#77bcff}
-.preview{display:grid;place-items:center;background:#0b1626;border-radius:16px;min-height:440px;padding:20px;overflow:hidden}
-canvas{display:block;max-width:100%;max-height:570px;border:2px solid #f6fbff40;border-radius:5px;box-shadow:0 20px 70px #0008;cursor:grab;touch-action:none}
-canvas:active{cursor:grabbing}.tips{font-size:13px;color:#9cafc8;margin-top:12px}.status{margin-top:14px;color:#aad6ff;font-size:14px}
-@media(max-width:780px){.layout{grid-template-columns:1fr}.preview{min-height:300px;padding:12px}.card{padding:16px}}
-</style></head>
-<body><main>
-<header class="header"><a href="../index.html">← Service POC 목록</a><span class="meta">#02 · 20261108-18-01 · 재평가 94/100</span></header>
-<h1>CreatorMarketplaceCropLab</h1>
-<p>제품 사진 한 장을 마켓별 비율에 맞춰 잘라보자. 사진은 서버로 전송되지 않고 브라우저 안에서만 처리돼.</p>
-<div class="layout">
-<section class="card" aria-label="크롭 설정">
-<h2>크롭 작업실</h2>
-<label class="file" for="upload">📷 <strong>제품 사진 업로드</strong><br><small>PNG / JPG / WEBP · 15MB 이하</small><input id="upload" type="file" accept="image/png,image/jpeg,image/webp"></label>
-<fieldset><legend>마켓 이미지 비율</legend><div class="preset" id="presets">
-<button type="button" data-ratio="1" aria-pressed="true">정사각형 · 1:1</button>
-<button type="button" data-ratio="0.8" aria-pressed="false">세로형 · 4:5</button>
-<button type="button" data-ratio="0.75" aria-pressed="false">세로형 · 3:4</button>
-<button type="button" data-ratio="1.7777777778" aria-pressed="false">가로형 · 16:9</button>
-</div></fieldset>
-<div class="row"><label for="zoom">이미지 확대</label><span id="zoomText">100%</span></div><input id="zoom" type="range" min="100" max="250" value="100" step="1">
-<div class="row" style="margin:14px 0"><label for="safe">안전 영역 가이드</label><input id="safe" type="checkbox" checked></div>
-<button class="primary" type="button" id="download">현재 비율 PNG 저장</button>
-<button type="button" id="reset" style="margin-top:9px;background:#213752;color:#dceaff;border:0;border-radius:10px;width:100%;padding:10px;cursor:pointer">위치·확대 초기화</button>
-<p class="tips">미리보기를 손가락이나 마우스로 드래그해 피사체 위치를 조정해. 비율을 바꾸면서 잘림 여부를 즉시 확인할 수 있어.</p>
-<div id="status" class="status" aria-live="polite">샘플 이미지를 표시 중 · 사진을 올려 실험해봐.</div>
-</section>
-<section class="card"><h2>실시간 안전 크롭 미리보기</h2><div class="preview"><canvas id="preview" width="720" height="720" aria-label="제품 사진 크롭 결과"></canvas></div>
-<div class="tips">점선 영역은 잘림 위험을 살펴보기 위한 10% 안전 가이드이며 다운로드된 PNG에는 포함되지 않아.</div></section>
+:root{font:15px/1.6 system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo",sans-serif;color:#25302c;background:#f7f6f2}*{box-sizing:border-box}
+body{margin:0}button,input{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:wait}a{color:inherit}
+.wrap{width:min(1200px,calc(100% - 40px));margin:auto}.topbar{height:66px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #deded7;gap:18px}.back{font-weight:700;font-size:13px;text-decoration:none}.pill{font-size:11px;font-weight:800;border:1px solid #d5d9ce;border-radius:100px;padding:5px 11px;background:#fff;color:#627366;letter-spacing:.05em}
+.hero{padding:42px 0 24px;display:grid;grid-template-columns:1fr 295px;gap:28px;align-items:start}.eyebrow{font-size:12px;letter-spacing:.14em;font-weight:800;color:#65866f}.hero h1{font-size:clamp(31px,4.4vw,56px);letter-spacing:-.065em;line-height:1.19;margin:12px 0 15px;font-weight:850}.hero p{color:#62716a;max-width:650px;margin:0;font-size:16px;line-height:1.8}.callout{background:#e5eee3;padding:22px;border-radius:20px;border:1px solid #cfdecf}.callout strong{display:block;font-size:15px;margin-bottom:7px}.callout p{font-size:13px;color:#54735d;line-height:1.75;margin:0 0 13px}.callout button{padding:11px 14px;background:#234f37;color:white;border:0;border-radius:10px;font-weight:800;font-size:13px;width:100%}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 24px}.step{background:#fff;border:1px solid #e0e2db;padding:12px 16px;border-radius:12px;color:#4f5e56;font-size:13px}.step b{color:#29553e;margin-right:8px}
+.workspace{display:grid;grid-template-columns:302px minmax(0,1fr);gap:17px;align-items:start}.panel{background:white;border:1px solid #e1e3dc;border-radius:20px;padding:19px;box-shadow:0 10px 34px #2a3d2910}.panel h2{font-size:17px;margin:0 0 9px;letter-spacing:-.025em}.subtle{font-size:12px;color:#748178;margin:0 0 14px}.sep{border:0;border-top:1px solid #e6e8e2;margin:19px 0}
+.upload{position:relative;display:block;border:1.5px dashed #adc2b2;border-radius:15px;background:#f5f9f5;text-align:center;padding:16px 12px;cursor:pointer}.upload strong{display:block;font-size:14px}.upload span{display:block;font-size:12px;color:#758679;margin-top:4px}.upload input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.upload:focus-within{outline:3px solid #9cccb5;outline-offset:3px}.field-title{font-size:13px;font-weight:750;margin-bottom:9px}.source-frame{position:relative;margin:10px auto 7px;width:100%;max-width:240px;background:#ecf0ea;border:1px solid #d7e0d9;border-radius:12px;padding:7px}.source-frame canvas{display:block;width:100%;height:auto;cursor:crosshair;border-radius:8px;touch-action:none}.hint{font-size:12px;color:#6c7e73;line-height:1.6;margin:8px 0}.sample-note{font-size:12px;border-radius:10px;background:#fff8e8;padding:10px;color:#7f612d;margin-top:8px}
+.focus-indicator{font-size:12px;font-weight:750;color:#386b4c}input[type=range]{width:100%;accent-color:#327a53}label[for=zoom]{font-size:13px;font-weight:750}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.actions{display:flex;gap:8px;margin-top:14px}.actions button{flex:1;font-size:12px;padding:10px 8px;border-radius:10px;border:1px solid #d7ddd6;background:#fff;color:#3e5846;font-weight:750}
+.result-head{display:flex;align-items:start;justify-content:space-between;gap:15px;flex-wrap:wrap}.result-head h2{margin:0 0 5px}.result-head .subtle{margin:0}.check{font-size:12px;font-weight:750;background:#e7f3e9;color:#386949;border-radius:40px;padding:6px 10px}.ratio-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}.ratio-tab{background:#f7f7f4;border:2px solid transparent;border-radius:13px;padding:9px 7px 11px;text-align:left;color:#4a5c50;transition:border-color .15s,background .15s;min-width:0}.ratio-tab:hover{background:#eff5f0}.ratio-tab[aria-pressed=true]{border-color:#2c6845;background:#eff7ef}.ratio-tab strong{font-size:13px;display:block;margin-top:7px}.ratio-tab small{font-size:11px;color:#819086;display:block}.ratio-tab canvas{display:block;width:100%;height:85px;object-fit:contain;object-position:center;background:#e9ebe5;border-radius:8px}
+.stage{border-radius:18px;background:repeating-conic-gradient(#e7e8e2 0% 25%,#f1f2ec 0% 50%) 50%/20px 20px;display:flex;justify-content:center;align-items:center;min-height:385px;padding:22px;overflow:hidden;border:1px solid #e0e6dc}.stage canvas{max-width:100%;max-height:410px;width:auto;height:auto;display:block;box-shadow:0 13px 35px #17271b39;cursor:grab;touch-action:none}.stage canvas:active{cursor:grabbing}.legend{margin-top:10px;display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#718174}.legend i{display:inline-block;border:2px dashed #2d7b58;width:17px;height:10px;vertical-align:middle;margin-right:4px}.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}.metric{border:1px solid #e2e7df;background:#f8faf7;padding:13px;border-radius:11px}.metric span{font-size:11px;color:#76877a;display:block}.metric strong{font-size:16px;color:#294e39;display:block;margin-top:2px}.feedback{font-size:13px;color:#41624c;background:#edf5ed;border:1px solid #d5e6d6;border-radius:12px;padding:11px 13px;margin:13px 0 0;min-height:43px}.feedback[data-kind=error]{background:#fff0e9;color:#9c472f;border-color:#f1d0c1}.output{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:15px}.primary,.secondary{border-radius:12px;padding:14px 13px;border:0;font-weight:800;font-size:13px}.primary{color:#fff;background:#245b3d}.secondary{color:#1f5e3e;background:#e1f0e5;border:1px solid #c2dfcb}.output small{display:block;font-size:11px;font-weight:500;opacity:.82;margin-top:3px}.foot{padding:26px 0 45px;color:#718079;font-size:12px;line-height:1.8}.foot strong{color:#536d5b}
+@media(max-width:900px){.hero{grid-template-columns:1fr}.hero{padding-top:28px}.callout{max-width:none}.workspace{grid-template-columns:1fr}.panel{padding:17px}.steps{gap:8px}}
+@media(max-width:550px){.wrap{width:min(100% - 26px,1200px)}.topbar{height:58px}.hero h1{font-size:33px}.hero p{font-size:14px}.steps{grid-template-columns:1fr}.step{padding:9px 12px}.ratio-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ratio-tab canvas{height:70px}.stage{min-height:270px;padding:9px}.stage canvas{max-height:345px}.output{grid-template-columns:1fr}.metric-grid{grid-template-columns:repeat(2,1fr)}.metric:last-child{grid-column:span 2}.hero{gap:14px}.callout{padding:16px}}
+</style>
+</head>
+<body><div class="wrap">
+<header class="topbar"><a class="back" href="../index.html">← Service POC 목록</a><span class="pill">#02 · SERVICE POC · 94/100</span></header>
+<main>
+<section class="hero"><div><div class="eyebrow">CROP LAB / 사진 비율 작업실</div><h1>상품 사진 한 장,<br>4가지 비율로 바로 준비하세요.</h1><p>쇼핑몰 썸네일·상세 카드·세로 피드·가로 배너마다 사진을 다시 자르기 번거롭죠. <strong>상품이 화면 밖으로 잘리지 않도록 위치를 직접 맞춘 다음, 4개 PNG를 ZIP 하나로 저장</strong>할 수 있어요.</p></div><aside class="callout"><strong>✨ 30초 미리 체험</strong><p>예제 사진에는 상품이 오른쪽에 있어요. 아래 버튼을 누르면 상품 중심점을 잡아 네 가지 비율에 맞춰 한 번에 재정렬해 줍니다. 결과를 바로 비교해 보세요.</p><button id="tryExample" type="button">예제 상품을 한 번에 맞춰보기 →</button></aside></section>
+<div class="steps" aria-label="사용 방법"><div class="step"><b>01</b>사진 업로드 또는 예제 사용</div><div class="step"><b>02</b>원본에서 상품 중심 클릭 → 비율별 미세 조정</div><div class="step"><b>03</b>잘린 부분 확인 후 PNG 또는 ZIP 저장</div></div>
+<div class="workspace">
+<section class="panel" aria-label="사진과 초점 설정"><h2>1. 사진과 상품 위치</h2><p class="subtle">별도 로그인 없이 모두 내 브라우저에서 처리합니다.</p><label class="upload" for="upload"><strong>＋ 내 상품 사진 불러오기</strong><span>JPG / PNG / WEBP · 최대 15MB</span><input id="upload" type="file" accept="image/jpeg,image/png,image/webp"></label>
+<hr class="sep"><div class="field-title">원본 사진에서 상품 중심을 클릭해 주세요</div><div class="source-frame"><canvas id="original" width="400" height="300" role="button" tabindex="0" aria-label="상품의 중심을 선택하는 원본 사진. 화살표 키로 위치를 옮길 수 있습니다"></canvas></div><p class="hint">사진 위의 <strong>초록 십자 표시</strong>를 상품 중앙으로 옮기면 네 가지 사진의 구도를 한꺼번에 조절할 수 있어요. 키보드 방향키도 지원합니다.</p><div class="focus-indicator" id="focusText">상품 중심: 가로 50% · 세로 50%</div><div class="actions"><button type="button" id="centerFocus">중앙(50%)으로</button><button type="button" id="resetAll">처음부터 다시</button></div>
+<hr class="sep"><div class="row"><label for="zoom">2. 선택한 비율 확대</label><strong id="zoomValue">100%</strong></div><input id="zoom" type="range" min="100" max="230" value="100" step="1"><p class="hint">확대하면 인물이나 상품을 더 크게 보일 수 있지만 원본의 잘리는 부분도 늘어요. 큰 미리보기를 직접 드래그하면 <strong>현재 비율만</strong> 위치가 바뀝니다.</p>
+<div class="row"><label for="guides">안쪽 10% 가이드 표시</label><input id="guides" type="checkbox" checked></div><p class="hint">가이드는 구도를 돕는 보조선이며 저장된 파일에는 들어가지 않습니다. 상품을 자동으로 인식하거나 정책 적합성을 판정하지 않아요.</p></section>
+<section class="panel" aria-label="비율별 크롭 미리보기"><div class="result-head"><div><h2>2. 4가지 결과 미리보기</h2><p class="subtle">아래 네 가지를 눌러 비교하세요. 각 비율의 위치와 확대는 별도로 기억합니다.</p></div><span class="check">✓ 파일은 내 기기에서 생성</span></div>
+<div id="ratioGrid" class="ratio-grid" role="group" aria-label="이미지 비율 선택">
+<button class="ratio-tab" data-id="square" aria-pressed="true" type="button"><canvas id="thumb-square" width="200" height="200" aria-hidden="true"></canvas><strong>정사각형 · 1:1</strong><small>1200 × 1200 PNG</small></button>
+<button class="ratio-tab" data-id="portrait45" aria-pressed="false" type="button"><canvas id="thumb-portrait45" width="200" height="250" aria-hidden="true"></canvas><strong>세로형 · 4:5</strong><small>1200 × 1500 PNG</small></button>
+<button class="ratio-tab" data-id="portrait34" aria-pressed="false" type="button"><canvas id="thumb-portrait34" width="180" height="240" aria-hidden="true"></canvas><strong>세로형 · 3:4</strong><small>1200 × 1600 PNG</small></button>
+<button class="ratio-tab" data-id="landscape" aria-pressed="false" type="button"><canvas id="thumb-landscape" width="240" height="135" aria-hidden="true"></canvas><strong>가로형 · 16:9</strong><small>1600 × 900 PNG</small></button></div>
+<div class="stage"><canvas id="preview" width="600" height="600" role="img" aria-label="선택한 비율의 최종 이미지 미리보기. 드래그로 위치 조절"></canvas></div><div class="legend"><span><i></i>안쪽 10% 구도 가이드</span><span>드래그 = 선택 비율의 사진 위치 변경</span></div>
+<div class="metric-grid"><div class="metric"><span>현재 선택</span><strong id="metricRatio">1:1 · 정사각형</strong></div><div class="metric"><span>출력 해상도</span><strong id="metricSize">1200 × 1200</strong></div><div class="metric"><span>원본 영역 보존율*</span><strong id="metricCoverage">—</strong></div></div>
+<div id="feedback" class="feedback" aria-live="polite">예제 사진을 불러오는 중입니다.</div>
+<div class="output"><button id="downloadOne" type="button" class="secondary">선택한 비율 PNG 저장<small>현재 화면의 가이드선 제외</small></button><button id="downloadZip" type="button" class="primary">4개 비율 ZIP 한 번에 저장<small>PNG 4개를 묶어서 다운로드</small></button></div></section>
 </div>
-<p class="tips">로컬 POC · 마켓별 실제 규격은 판매 채널 정책을 별도 확인해야 해. 배경 제거·AI 피사체 자동인식은 포함하지 않음.</p>
-</main>
+<footer class="foot"><strong>이 POC의 한계</strong> · 실제 쇼핑몰마다 권장 크기·여백과 표시 방식이 다릅니다. 여기의 네 가지는 일반적인 화면 비율의 예시이고 특정 판매처의 규정 검증 도구는 아니에요. *원본 영역 보존율은 확대·자르기로 남는 픽셀 면적 비율이지 상품이 잘리거나 적합한지를 자동 판정한 값이 아닙니다. 원본 이미지는 외부 서버로 전송되지 않습니다.</footer>
+</main></div>
 <script>
-"use strict";
-const $=id=>document.getElementById(id),canvas=$("preview"),ctx=canvas.getContext("2d"),file=$("upload");
-let image,ratio=1,zoom=1,offsetX=0,offsetY=0,sourceURL=null,drag=null;
-function sample(){
- const c=document.createElement("canvas");c.width=700;c.height=700;const x=c.getContext("2d");
- const bg=x.createLinearGradient(0,0,700,700);bg.addColorStop(0,"#f3e7dc");bg.addColorStop(1,"#cab9a5");x.fillStyle=bg;x.fillRect(0,0,700,700);
- x.fillStyle="#b6a48b";x.beginPath();x.ellipse(350,580,195,28,0,0,Math.PI*2);x.fill();
- x.fillStyle="#9b654e";x.beginPath();x.roundRect(225,260,250,295,36);x.fill();
- x.fillStyle="#f0b28d";x.fillRect(246,278,208,220);
- x.fillStyle="#ad674d";x.fillRect(230,260,240,40);x.fillRect(240,518,220,30);
- x.fillStyle="#fff3e4";x.textAlign="center";x.font="bold 33px sans-serif";x.fillText("CREATOR",350,375);x.font="22px sans-serif";x.fillText("sample product",350,410);
- x.fillStyle="#efe6de";x.beginPath();x.arc(355,215,40,0,Math.PI*2);x.fill();
- const img=new Image();img.onload=()=>{image=img;render();};img.src=c.toDataURL("image/png");
-}
-function dimensions(){
- let w=720,h=Math.round(w/ratio);if(h>1000){h=1000;w=Math.round(h*ratio);}
- return [w,h];
-}
-function clampOffsets(){
- if(!image)return;
- const w=canvas.width,h=canvas.height,s=Math.max(w/image.width,h/image.height)*zoom;
- const mx=Math.max(0,(image.width*s-w)/2),my=Math.max(0,(image.height*s-h)/2);
- offsetX=Math.max(-mx,Math.min(mx,offsetX));offsetY=Math.max(-my,Math.min(my,offsetY));
-}
-function paint(target,w,h,guide){
- const s=Math.max(w/image.width,h/image.height)*zoom;
- const cx=w/2+offsetX*w/canvas.width,cy=h/2+offsetY*h/canvas.height;
- target.fillStyle="#fff";target.fillRect(0,0,w,h);
- target.drawImage(image,cx-image.width*s/2,cy-image.height*s/2,image.width*s,image.height*s);
- if(guide){
-  const pad=Math.min(w,h)*.1;target.save();target.strokeStyle="#fff";target.lineWidth=3;
-  target.setLineDash([12,8]);target.strokeRect(pad,pad,w-2*pad,h-2*pad);
-  target.strokeStyle="#132c4d";target.lineDashOffset=10;target.strokeRect(pad,pad,w-2*pad,h-2*pad);target.restore();
- }
-}
-function render(){
- if(!image)return;const [w,h]=dimensions();canvas.width=w;canvas.height=h;clampOffsets();paint(ctx,w,h,$("safe").checked);
-}
-function setRatio(r){
- ratio=r;offsetX=offsetY=0;for(const b of document.querySelectorAll("[data-ratio]"))b.setAttribute("aria-pressed",String(Number(b.dataset.ratio)===r));
- render();$("status").textContent="비율 변경 완료 · 드래그로 위치를 조정할 수 있어.";
-}
-for(const b of document.querySelectorAll("[data-ratio]"))b.addEventListener("click",()=>setRatio(Number(b.dataset.ratio)));
-$("zoom").addEventListener("input",e=>{zoom=Number(e.target.value)/100;$("zoomText").textContent=e.target.value+"%";render();});
-$("safe").addEventListener("change",render);
-$("reset").addEventListener("click",()=>{zoom=1;offsetX=offsetY=0;$("zoom").value=100;$("zoomText").textContent="100%";render();$("status").textContent="크롭 위치와 확대를 초기화했어.";});
-canvas.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,ox:offsetX,oy:offsetY};canvas.setPointerCapture(e.pointerId);});
-canvas.addEventListener("pointermove",e=>{if(!drag)return;const r=canvas.getBoundingClientRect();offsetX=drag.ox+(e.clientX-drag.x)*canvas.width/r.width;offsetY=drag.oy+(e.clientY-drag.y)*canvas.height/r.height;render();});
-for(const ev of ["pointerup","pointercancel","lostpointercapture"])canvas.addEventListener(ev,()=>{drag=null;});
-file.addEventListener("change",e=>{
- const f=e.target.files?.[0];if(!f)return;
- if(f.size>15*1024*1024){$("status").textContent="15MB 이하 이미지를 선택해줘.";return;}
- if(!["image/jpeg","image/png","image/webp"].includes(f.type)){$("status").textContent="PNG, JPG, WEBP만 가능해.";return;}
- const url=URL.createObjectURL(f),img=new Image();
- img.onload=()=>{if(sourceURL)URL.revokeObjectURL(sourceURL);sourceURL=url;image=img;offsetX=offsetY=0;zoom=1;$("zoom").value=100;$("zoomText").textContent="100%";render();$("status").textContent=f.name+" 로딩 완료 · 서버 업로드 없음.";};
- img.onerror=()=>{URL.revokeObjectURL(url);$("status").textContent="이미지를 읽지 못했어. 다른 파일을 선택해줘.";};img.src=url;
-});
-$("download").addEventListener("click",()=>{
- if(!image)return;
- const [w,h]=dimensions(),factor=Math.max(1,Math.round(1200/w));
- const out=document.createElement("canvas");out.width=w*factor;out.height=h*factor;
- paint(out.getContext("2d"),out.width,out.height,false);
- out.toBlob(blob=>{if(!blob){$("status").textContent="이미지 저장에 실패했어.";return;}
- const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="crop-"+w+"x"+h+".png";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);$("status").textContent="PNG 저장 요청 완료 · 미리보기 가이드는 제외돼.";}, "image/png");
-});
+'use strict';
+const $=id=>document.getElementById(id);
+const formats=[{id:'square',label:'1:1 · 정사각형',w:1200,h:1200},{id:'portrait45',label:'4:5 · 세로형',w:1200,h:1500},{id:'portrait34',label:'3:4 · 세로형',w:1200,h:1600},{id:'landscape',label:'16:9 · 가로형',w:1600,h:900}];
+const byId=id=>formats.find(f=>f.id===id);
+const state={selected:'square',image:null,sourceUrl:null,demo:true,focus:{x:.5,y:.5},edit:{},drag:null,busy:false};
+const blankEdit=()=>Object.fromEntries(formats.map(f=>[f.id,{zoom:1,dx:0,dy:0}]));
+const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
+const status=(msg,kind='ok')=>{const el=$('feedback');el.textContent=msg;el.dataset.kind=kind;};
+function generateSample(){const c=document.createElement('canvas');c.width=950;c.height=700;const x=c.getContext('2d');
+const g=x.createLinearGradient(0,0,950,700);g.addColorStop(0,'#e8ebe2');g.addColorStop(1,'#c5d1c3');x.fillStyle=g;x.fillRect(0,0,950,700);
+x.fillStyle='#bac5b2';x.fillRect(0,475,950,225);x.fillStyle='#d5dbc9';x.fillRect(0,472,950,8);
+x.fillStyle='#d0d8c8';x.beginPath();x.ellipse(683,604,175,31,0,0,Math.PI*2);x.fill();
+for(let i=0;i<5;i++){x.fillStyle='rgba(255,255,255,.14)';x.beginPath();x.arc(90+i*135,80+(i%2)*55,58,0,Math.PI*2);x.fill();}
+// An original illustration of a sample product sitting off-center intentionally.
+x.fillStyle='#496e5c';x.beginPath();x.roundRect(609,220,165,357,43);x.fill();x.fillStyle='#294c3b';x.fillRect(625,224,133,35);x.fillStyle='#a6bb9c';x.beginPath();x.roundRect(632,135,119,110,17);x.fill();x.fillStyle='#375a49';x.fillRect(634,135,115,28);
+x.fillStyle='#f6f3e5';x.beginPath();x.roundRect(629,305,125,160,11);x.fill();x.fillStyle='#284c3c';x.textAlign='center';x.font='bold 23px system-ui';x.fillText('LEAF',691,356);x.font='15px system-ui';x.fillText('BOTANICAL',691,384);x.fillStyle='#b6c9aa';x.beginPath();x.ellipse(691,420,20,26,.4,0,Math.PI*2);x.fill();x.fillStyle='#657a60';x.font='18px system-ui';x.fillText('SAMPLE',691,500);
+x.fillStyle='#60765f';x.font='bold 29px system-ui';x.textAlign='left';x.fillText('BOTANICAL',85,350);x.font='18px system-ui';x.fillText('example product photo',86,386);
+return c;}
+function safeDimensions(image){return image&&Number.isFinite(image.width)&&image.width>0&&Number.isFinite(image.height)&&image.height>0;}
+function fitParams(format,width,height){const img=state.image,edit=state.edit[format.id];const scale=Math.max(width/img.width,height/img.height)*edit.zoom;const iw=img.width*scale,ih=img.height*scale;
+const maxDX=Math.max(0,(iw-width)/2),maxDY=Math.max(0,(ih-height)/2);
+edit.dx=clamp(edit.dx,-maxDX/width,maxDX/width);edit.dy=clamp(edit.dy,-maxDY/height,maxDY/height);
+return {iw,ih,x:(width-iw)/2+edit.dx*width,y:(height-ih)/2+edit.dy*height,coverage:Math.min(1,width/iw)*Math.min(1,height/ih)};}
+function paint(canvas,format,guide=false){if(!state.image)return;const w=canvas.width,h=canvas.height,ctx=canvas.getContext('2d');ctx.clearRect(0,0,w,h);const {iw,ih,x,y}=fitParams(format,w,h);ctx.fillStyle='#f0f2eb';ctx.fillRect(0,0,w,h);ctx.drawImage(state.image,x,y,iw,ih);
+if(guide){const pad=Math.min(w,h)*.1;ctx.save();ctx.strokeStyle='#fff';ctx.lineWidth=Math.max(2,w/200);ctx.setLineDash([12,8]);ctx.strokeRect(pad,pad,w-2*pad,h-2*pad);ctx.setLineDash([8,8]);ctx.strokeStyle='#1c6546';ctx.lineDashOffset=12;ctx.strokeRect(pad,pad,w-2*pad,h-2*pad);ctx.restore();}}
+function originalPreview(){const c=$('original'),ctx=c.getContext('2d');if(!state.image)return;const {width:w,height:h}=c;ctx.clearRect(0,0,w,h);const s=Math.min(w/state.image.width,h/state.image.height);const iw=state.image.width*s,ih=state.image.height*s,ox=(w-iw)/2,oy=(h-ih)/2;ctx.fillStyle='#eef0e9';ctx.fillRect(0,0,w,h);ctx.drawImage(state.image,ox,oy,iw,ih);const xx=ox+iw*state.focus.x,yy=oy+ih*state.focus.y;
+ctx.beginPath();ctx.arc(xx,yy,10,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#236846';ctx.lineWidth=3;ctx.stroke();ctx.beginPath();ctx.moveTo(xx-18,yy);ctx.lineTo(xx+18,yy);ctx.moveTo(xx,yy-18);ctx.lineTo(xx,yy+18);ctx.lineWidth=2;ctx.stroke();$('focusText').textContent=`상품 중심: 가로 ${Math.round(state.focus.x*100)}% · 세로 ${Math.round(state.focus.y*100)}%`;
+state.originalFrame={x:ox,y:oy,w:iw,h:ih};}
+function repaint(){if(!safeDimensions(state.image))return;originalPreview();for(const f of formats){const c=$('thumb-'+f.id);c.width= Math.round(220*f.w/Math.max(f.w,f.h));c.height=Math.round(220*f.h/Math.max(f.w,f.h));paint(c,f,false);}
+const f=byId(state.selected),c=$('preview');const max=650;c.width=Math.round(max*f.w/Math.max(f.w,f.h));c.height=Math.round(max*f.h/Math.max(f.w,f.h));paint(c,f,$('guides').checked);
+for(const button of document.querySelectorAll('.ratio-tab'))button.setAttribute('aria-pressed',String(button.dataset.id===state.selected));
+$('zoom').value=Math.round(state.edit[f.id].zoom*100);$('zoomValue').textContent=Math.round(state.edit[f.id].zoom*100)+'%';
+$('metricRatio').textContent=f.label;$('metricSize').textContent=`${f.w} × ${f.h}`;$('metricCoverage').textContent=Math.round(fitParams(f,c.width,c.height).coverage*100)+'%';}
+function recenterAll(){if(!state.image)return;for(const f of formats){const ed=state.edit[f.id],s=Math.max(f.w/state.image.width,f.h/state.image.height)*ed.zoom;ed.dx=(.5-state.focus.x)*state.image.width*s/f.w;ed.dy=(.5-state.focus.y)*state.image.height*s/f.h;}repaint();}
+function chooseFocus(x,y){state.focus={x:clamp(x,0,1),y:clamp(y,0,1)};recenterAll();status('상품 중심을 바꿨어요. 네 가지 비율의 위치를 함께 조정했습니다.');}
+function resetAll(){state.edit=blankEdit();state.focus={x:.5,y:.5};state.selected='square';repaint();status('모든 비율의 사진 위치, 확대, 상품 중심을 초기화했습니다.');}
+function initializeImage(img,kind,name){if(!safeDimensions(img))throw new Error('이미지 크기가 올바르지 않습니다.');state.image=img;state.demo=kind==='sample';resetAll();status((state.demo?'기본 예제':'내 사진 '+name)+' 준비 완료. 먼저 원본 사진에서 상품의 중심을 클릭해 보세요.');$('original').focus({preventScroll:true});}
+function sample(){initializeImage(generateSample(),'sample','');status('샘플 상품은 오른쪽에 있습니다. 위쪽의 「예제 상품을 한 번에 맞춰보기」 버튼으로 네 가지 비율의 변화를 확인해 보세요.');}
+function pointerToFocus(e){const r=$('original').getBoundingClientRect(),p=state.originalFrame;if(!p)return;const x=(e.clientX-r.left)*$('original').width/r.width,y=(e.clientY-r.top)*$('original').height/r.height;chooseFocus((x-p.x)/p.w,(y-p.y)/p.h);}
+$('original').addEventListener('click',pointerToFocus);
+$('original').addEventListener('keydown',e=>{const moves={ArrowLeft:[-.01,0],ArrowRight:[.01,0],ArrowUp:[0,-.01],ArrowDown:[0,.01]};const d=moves[e.key];if(!d)return;e.preventDefault();chooseFocus(state.focus.x+d[0],state.focus.y+d[1]);});
+$('tryExample').addEventListener('click',()=>{if(!state.demo)sample();state.edit=blankEdit();state.focus={x:.72,y:.52};recenterAll();state.selected='portrait45';repaint();status('완료! 예제 상품 중심을 맞췄습니다. 네 가지 비율을 눌러 변화된 결과를 비교해 보세요.');});
+$('centerFocus').addEventListener('click',()=>chooseFocus(.5,.5));$('resetAll').addEventListener('click',resetAll);
+for(const b of document.querySelectorAll('.ratio-tab'))b.addEventListener('click',()=>{state.selected=b.dataset.id;repaint();status(byId(state.selected).label+' 미리보기입니다. 드래그로 이 비율만 위치를 미세 조정하세요.');});
+$('zoom').addEventListener('input',e=>{state.edit[state.selected].zoom=Number(e.target.value)/100;repaint();status('현재 비율의 확대를 '+e.target.value+'%로 조정했어요.');});
+$('guides').addEventListener('change',repaint);
+const preview=$('preview');preview.addEventListener('pointerdown',e=>{if(!state.image)return;state.drag={pointerId:e.pointerId,x:e.clientX,y:e.clientY,dx:state.edit[state.selected].dx,dy:state.edit[state.selected].dy};preview.setPointerCapture(e.pointerId);});
+preview.addEventListener('pointermove',e=>{if(!state.drag||state.drag.pointerId!==e.pointerId)return;const rect=preview.getBoundingClientRect(),ed=state.edit[state.selected];ed.dx=state.drag.dx+(e.clientX-state.drag.x)/rect.width;ed.dy=state.drag.dy+(e.clientY-state.drag.y)/rect.height;repaint();});
+function endDrag(){if(state.drag){state.drag=null;status('현재 비율의 위치를 수정했습니다. 다른 비율의 설정은 그대로 유지됩니다.');}}
+for(const event of ['pointerup','pointercancel','lostpointercapture'])preview.addEventListener(event,endDrag);
+$('upload').addEventListener('change',e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;if(!['image/jpeg','image/png','image/webp'].includes(f.type)){status('JPG·PNG·WEBP 이미지 파일만 사용할 수 있습니다.','error');return;}if(f.size>15*1024*1024){status('15MB 이하 이미지를 선택해주세요.','error');return;}const url=URL.createObjectURL(f),img=new Image();img.onload=()=>{if(!safeDimensions(img)||img.width*img.height>40_000_000){URL.revokeObjectURL(url);status('이미지가 너무 크거나 잘못되었습니다. 4천만 픽셀 이하 사진을 선택해주세요.','error');return;}if(state.sourceUrl)URL.revokeObjectURL(state.sourceUrl);state.sourceUrl=url;initializeImage(img,'upload',f.name);};img.onerror=()=>{URL.revokeObjectURL(url);status('이미지를 읽을 수 없습니다. 다른 사진을 선택해주세요.','error');};img.src=url;});
+function createOutput(f){const c=document.createElement('canvas');c.width=f.w;c.height=f.h;paint(c,f,false);return c;}
+function canvasPNG(c){return new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(new Error('PNG 변환 실패')),'image/png'));}
+function offer(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);}
+function crc32(data){let c=-1;for(let i=0;i<data.length;i++){c^=data[i];for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xEDB88320:0);}return(c^-1)>>>0;}
+function zip(files){const enc=new TextEncoder(),parts=[],central=[];let pos=0;
+for(const file of files){const name=enc.encode(file.name),data=file.data,crc=crc32(data),local=new Uint8Array(30+name.length),d=new DataView(local.buffer);
+d.setUint32(0,0x04034b50,true);d.setUint16(4,20,true);d.setUint32(14,crc,true);d.setUint32(18,data.length,true);d.setUint32(22,data.length,true);d.setUint16(26,name.length,true);local.set(name,30);parts.push(local,data);
+const cd=new Uint8Array(46+name.length),v=new DataView(cd.buffer);v.setUint32(0,0x02014b50,true);v.setUint16(4,20,true);v.setUint16(6,20,true);v.setUint32(16,crc,true);v.setUint32(20,data.length,true);v.setUint32(24,data.length,true);v.setUint16(28,name.length,true);v.setUint32(42,pos,true);cd.set(name,46);central.push(cd);pos+=local.length+data.length;}
+const centralLength=central.reduce((n,b)=>n+b.length,0),end=new Uint8Array(22),d=new DataView(end.buffer);d.setUint32(0,0x06054b50,true);d.setUint16(8,files.length,true);d.setUint16(10,files.length,true);d.setUint32(12,centralLength,true);d.setUint32(16,pos,true);return new Blob([...parts,...central,end],{type:'application/zip'});}
+async function exportFiles(all){if(state.busy||!state.image)return;state.busy=true;$('downloadOne').disabled=$('downloadZip').disabled=true;try{const list=all?formats:[byId(state.selected)],results=[];for(const f of list){const blob=await canvasPNG(createOutput(f));results.push({name:`product-${f.id}-${f.w}x${f.h}.png`,data:new Uint8Array(await blob.arrayBuffer()),blob});}
+if(all){offer(zip(results),'product-4-ratios.zip');status('4가지 비율의 PNG를 묶은 ZIP 다운로드를 시작했습니다. 파일 안에서 사진을 확인해 주세요.');}else{offer(results[0].blob,results[0].name);status('선택한 비율의 PNG 다운로드를 시작했습니다. 가이드는 이미지에 포함되지 않습니다.');}}
+catch(error){status('파일 생성에 실패했습니다: '+error.message,'error');}finally{state.busy=false;$('downloadOne').disabled=$('downloadZip').disabled=false;}}
+$('downloadOne').addEventListener('click',()=>exportFiles(false));$('downloadZip').addEventListener('click',()=>exportFiles(true));
+window.addEventListener('beforeunload',()=>{if(state.sourceUrl)URL.revokeObjectURL(state.sourceUrl);});
 sample();
-</script></body></html>
+</script>
+</body></html>
