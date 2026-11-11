@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>01-TestService | Service POC</title>
+  <style>
+    :root { color-scheme: dark; --accent: #60a5fa; }
+    * { box-sizing: border-box; }
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 24px; background: radial-gradient(circle at 50% 10%, #22304d 0, #0b1020 56%); color: #f8fafc; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { width: min(620px, 100%); }
+    .back { display: inline-flex; align-items: center; margin-bottom: 28px; color: #a5b4c9; text-decoration: none; font-size: 14px; }
+    .back:hover { color: var(--accent); }
+    .panel { padding: clamp(28px, 6vw, 48px); border: 1px solid #30405f; border-radius: 24px; background: #151d31; box-shadow: 0 24px 80px #0004; }
+    .eyebrow { margin: 0 0 10px; color: var(--accent); letter-spacing: .14em; font-size: 12px; font-weight: 800; }
+    h1 { font-size: clamp(30px, 6vw, 42px); letter-spacing: -.05em; margin: 0 0 12px; }
+    .description { margin: 0 0 30px; color: #adb9ce; }
+    button { width: 100%; padding: 15px 20px; border: 0; border-radius: 12px; background: var(--accent); color: #08101e; font: inherit; font-weight: 800; cursor: pointer; transition: filter .15s; }
+    button:hover { filter: brightness(1.1); }
+    button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+    .status { margin: 20px 0 0; min-height: 24px; color: #cbd5e1; font-size: 14px; }
+    .muted { color: #8391a9; font-size: 12px; margin-top: 26px; }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="../main.html">← POC 목록으로 돌아가기</a>
+    <section class="panel" aria-labelledby="poc-title">
+      <p class="eyebrow">SERVICE / PROOF OF CONCEPT</p>
+      <h1 id="poc-title">01-TestService</h1>
+      <p class="description">서비스 아이디어의 초기 가설과 화면 구성을 확인하기 위한 테스트입니다.</p>
+      <button type="button" id="run">테스트 실행</button>
+      <p class="status" id="status" role="status" aria-live="polite">아직 실행하지 않았습니다.</p>
+      <p class="muted">이 페이지는 향후 실제 POC로 교체할 수 있는 샘플입니다.</p>
+    </section>
+  </main>
+  <script>
+    let count = 0;
+    document.getElementById("run").addEventListener("click", () => {
+      count += 1;
+      document.getElementById("status").textContent = "테스트 실행 완료 · " + count + "회";
+    });
+  </script>
+</body>
+</html>
