@@ -1,66 +1,78 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CreatorPatternTileProof · POC 03</title>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f6f8fb">
+<title>반복 패턴 경계 검사실 · CreatorPatternTileProof</title>
 <style>
-:root{font:15px/1.5 system-ui,-apple-system,sans-serif;color-scheme:dark;background:#0b1220;color:#eff6ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0,#233a57,transparent 55%),#0b1220}main{max-width:1160px;margin:auto;padding:24px 18px 60px}a{color:#93c5fd}h1{font-size:clamp(29px,5vw,48px);letter-spacing:-.05em;margin:18px 0 4px}p{color:#a9bdd5}.top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:300px 1fr;gap:18px;margin-top:22px}.card{background:#142139;border:1px solid #314762;border-radius:18px;padding:18px}.card h2{margin:0 0 12px;font-size:18px}label{display:block;margin:16px 0 7px;color:#dce8f6;font-weight:650}input[type=file]{width:100%;padding:10px;background:#223550;border-radius:10px}input[type=range]{width:100%;accent-color:#8ac9ff}button{border:0;background:#8ac9ff;color:#09213b;border-radius:11px;padding:12px 16px;font-weight:800;cursor:pointer}button.secondary{background:#263b56;color:#e3efff}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.buttons button{flex:1}.preview{display:grid;place-items:center;background:#0a1729;border-radius:14px;padding:14px;min-height:400px}canvas{max-width:100%;height:auto;border-radius:8px;image-rendering:auto}.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.metric{background:#213450;border-radius:10px;padding:12px}.metric small{display:block;color:#a5bbd3}.metric strong{font-size:23px}#status{color:#b7ddff;min-height:3em}.hint{font-size:12px;color:#9cb2cd}.toggle{display:flex;align-items:center;gap:10px}.toggle label{margin:0}@media(max-width:760px){.grid{grid-template-columns:1fr}.preview{min-height:260px}.card{padding:14px}}
-</style></head><body><main>
-<div class="top"><a href="../index.html">← Service POC 목록</a><span style="color:#a2b4cb">#03 · 20261108-19-10 · 재평가 93/100</span></div>
-<h1>CreatorPatternTileProof</h1><p>이미지를 3×3 타일로 반복해 네 변의 연결 오차를 눈으로 확인하고, 경계가 이어지는 패턴으로 변환해 보세요.</p>
-<div class="grid"><section class="card"><h2>패턴 설정</h2>
-<label for="upload">패턴 이미지 (PNG/JPG/WEBP)</label><input type="file" id="upload" accept="image/png,image/jpeg,image/webp">
-<label for="size">검사 해상도 <span id="sizeText">192px</span></label><input id="size" type="range" min="96" max="384" step="32" value="192">
-<div class="toggle" style="margin:15px 0"><input type="checkbox" id="seams" checked><label for="seams">경계 강조선 표시</label></div>
-<div class="buttons"><button id="repair">경계 자동 연결</button><button id="original" class="secondary">원본으로</button></div>
-<div class="buttons"><button id="save" class="secondary">타일 PNG 저장</button><button id="reset" class="secondary">초기화</button></div>
-<h2 style="margin-top:25px">경계 오차</h2><div class="metrics"><div class="metric"><small>좌 ↔ 우</small><strong id="horizontal">—</strong></div><div class="metric"><small>상 ↔ 하</small><strong id="vertical">—</strong></div></div>
-<p id="status" aria-live="polite">샘플 패턴이 준비됐습니다. 경계 자동 연결을 눌러 변화를 비교해 보세요.</p>
-<p class="hint">오차는 가장자리 RGB 차이의 평균을 0~100으로 환산한 참고 지표입니다. 0에 가까울수록 연결이 자연스럽습니다.</p></section>
-<section class="card"><h2>3×3 반복 미리보기</h2><div class="preview"><canvas id="tiles" width="768" height="768" aria-label="9개 타일의 경계 연결 미리보기"></canvas></div><p class="hint">중앙 타일과 주변 8개 타일이 반복됩니다. 경계선은 다운로드에 포함되지 않습니다.</p>
-<h2>경계 확대</h2><div class="preview" style="min-height:140px"><canvas id="detail" width="768" height="180" aria-label="수평 수직 경계 확대 비교"></canvas></div></section></div>
-<p class="hint">모든 처리는 브라우저 안에서 진행됩니다. 자동 연결은 오프셋과 부드러운 블렌딩을 이용한 간단한 POC이며 정교한 패턴 생성 AI는 아닙니다.</p>
-</main><script>
-"use strict";
+:root{font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;color:#1c2f45;background:#f4f7fb}*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:radial-gradient(circle at 92% -10%,#d9eeed,transparent 45%),#f4f7fb}main{max-width:1240px;margin:auto;padding:24px 22px 56px}a{color:#287c81;font-weight:650;text-decoration:none}a:hover{text-decoration:underline}h1{font-size:clamp(29px,4vw,49px);letter-spacing:-.055em;line-height:1.16;margin:15px 0}h2{font-size:18px;margin:0 0 10px}p{margin:7px 0 14px;color:#52677c}button,input,select{font:inherit}button{border:1px solid #ced9e4;background:#fff;color:#23445b;border-radius:12px;cursor:pointer;padding:11px 14px;font-weight:750;transition:background .13s,transform .13s}button:hover{background:#edf5f5}button:active{transform:scale(.99)}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #359aa0;outline-offset:2px}.primary{background:#116e71;border-color:#116e71;color:white}.primary:hover{background:#09595b}.hero{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:22px;align-items:center;margin-top:12px}.eyebrow{font-size:12px;font-weight:850;color:#187e82;letter-spacing:.11em}.lead{font-size:17px;max-width:740px}.demo{background:#e4f2ed;border:1px solid #bee0d2;border-radius:17px;padding:16px}.demo b{display:block;font-size:15px;color:#135f56}.demo p{font-size:13px;color:#466a60;margin:6px 0 10px}.demo button{width:100%;background:#fff}.steps{display:flex;gap:9px;flex-wrap:wrap;margin:20px 0}.steps span{border:1px solid #dce7ee;background:#fff;padding:10px 14px;border-radius:99px;font-size:13px;color:#3f5b6c;font-weight:700}.workspace{display:grid;grid-template-columns:316px minmax(0,1fr);gap:18px}.panel{background:white;border:1px solid #dce5ee;box-shadow:0 13px 36px #2244630b;border-radius:20px;padding:19px;min-width:0}.eyelabel{font-size:12px;font-weight:850;letter-spacing:.07em;color:#658092}.controls label{display:block;margin:17px 0 6px;font-weight:750}.controls label.line{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;column-gap:10px}.controls label small{color:#6d8092;font-weight:500;display:block}.controls input[type=file]{width:100%;font-size:13px;background:#f6f9fc;border:1px dashed #a9bccb;border-radius:11px;padding:13px}.controls input[type=range]{width:100%;accent-color:#147c80;cursor:pointer}.controls select{width:100%;background:#fff;color:#244153;border:1px solid #b9cad7;border-radius:11px;padding:11px}.line{display:flex;justify-content:space-between;align-items:center;gap:9px}.line strong{color:#176d72}.check{display:flex;gap:8px;align-items:center;margin:14px 0;font-weight:650;font-size:13px}.check input{width:18px;height:18px;accent-color:#116e71}.check label{margin:0}.actions{display:grid;gap:9px;margin:20px 0}.actions button{width:100%}.secondary-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.status{font-size:13px;background:#e9f5f3;color:#0b5b54;padding:12px;border-radius:11px;min-height:48px}.status.error{background:#fff0eb;color:#97412e}.mini-note{font-size:12px;color:#718499;margin-top:11px}.results-head{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}.results-head p{font-size:13px}.scorecard{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0 17px}.score{background:#f2f6f8;border-radius:13px;padding:12px;min-width:0}.score span{font-size:12px;color:#617889;font-weight:700;display:block}.score strong{font-size:27px;color:#1f4051;font-variant-numeric:tabular-nums;letter-spacing:-.045em}.score.good{background:#e8f6ee}.score.good strong{color:#0b705a}.score small{display:block;font-size:11px;color:#668093}.notice{border-left:4px solid #dfa13b;background:#fff6e6;padding:11px 13px;border-radius:8px;font-size:13px;color:#684e23}.notice.ok{border-left-color:#1b9469;background:#edf8ee;color:#225d40}.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}.viewer{border:1px solid #dce4e9;border-radius:14px;padding:12px;background:#fafcfc;min-width:0}.viewer h3{font-size:15px;margin:0 0 5px}.viewer p{font-size:12px;color:#64798b;margin:0 0 10px;min-height:39px}.canvaswrap{border-radius:10px;overflow:hidden;background:repeating-conic-gradient(#e8eeed 0 25%,#fff 0 50%) 50% / 22px 22px;aspect-ratio:1}.canvaswrap canvas{width:100%;height:100%;display:block;image-rendering:auto}.placeholder{height:100%;display:grid;place-content:center;text-align:center;color:#657b88;background:#eff4f5;font-weight:700;padding:20px}.placeholder span{font-size:32px}.output{background:#e5f2f2;border-radius:13px;padding:14px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0 0}.output b{display:block;color:#155c5b}.output small{color:#4a7475}.output button{min-width:160px}.export-row{display:flex;gap:8px;flex-wrap:wrap}.export-row button{flex:1}.legend{font-size:12px;color:#667d8d;margin:10px 0}.footer-note{font-size:12px;margin-top:18px;color:#6b7f91}.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:990px){.workspace{grid-template-columns:280px minmax(0,1fr)}.hero{grid-template-columns:1fr 240px}}@media(max-width:760px){main{padding:16px 12px 34px}.hero{grid-template-columns:1fr;gap:10px}.demo{padding:13px}.workspace{grid-template-columns:1fr}.panel{padding:15px}.steps span{flex:1 1 100%;border-radius:11px}.compare{gap:8px}.viewer{padding:7px}.viewer h3{font-size:13px}.viewer p{font-size:11px;min-height:62px}.score strong{font-size:23px}.output button{width:100%}}@media(max-width:380px){.compare{grid-template-columns:1fr}.viewer p{min-height:unset}}
+</style>
+</head>
+<body>
+<main>
+<a href="../index.html">← Service POC 목록</a>
+<header class="hero">
+ <div><span class="eyebrow">CREATOR TOOLS · #03 · 재평가 93/100</span><h1>반복할 때 끊기는 패턴,<br>인쇄 전에 찾아보세요.</h1><p class="lead">벽지·패브릭·배경 패턴을 반복하면 줄이 드러나나요? <strong>경계 색 차이를 실제 픽셀로 검사</strong>하고, 연결되도록 보정한 뒤 PNG로 가져갈 수 있어요.</p></div>
+ <aside class="demo"><b>✨ 30초 체험</b><p>일부러 경계가 끊기게 만든 샘플을 준비했어요. 오른쪽에서 잘린 선을 보고, 아래 <strong>경계 자동 연결</strong>을 눌러 차이를 확인하세요.</p><button type="button" id="sample">문제 있는 예제 불러오기</button></aside>
+</header>
+<div class="steps"><span>1. 예제 또는 내 패턴 이미지 선택</span><span>2. 경계 연결 → 보정 전후 비교</span><span>3. 반복용 PNG 저장</span></div>
+<div class="workspace">
+ <section class="panel controls"><span class="eyelabel">01 · 준비와 보정</span><h2>패턴 설정</h2>
+  <label for="upload">내 이미지로 검사 <small>PNG / JPG / WEBP · 12MB 이하 · 파일은 업로드되지 않아요.</small></label>
+  <input id="upload" type="file" accept="image/png,image/jpeg,image/webp">
+  <label for="size" class="line"><span>출력 타일 해상도</span><strong id="sizeLabel">256 × 256px</strong></label>
+  <select id="size"><option value="128">128 × 128px (빠르게)</option><option value="256" selected>256 × 256px (권장)</option><option value="384">384 × 384px (조금 더 선명하게)</option></select>
+  <label for="blend" class="line"><span>경계 보정 범위</span><strong id="blendLabel">22%</strong></label>
+  <input id="blend" type="range" min="8" max="38" step="1" value="22"><p class="mini-note">높일수록 경계 주변 색을 넓게 섞어요. 무늬가 흐려지면 줄여 보세요.</p>
+  <div class="check"><input type="checkbox" id="guides" checked><label for="guides">반복 경계 가이드선 표시</label></div>
+  <div class="actions"><button type="button" class="primary" id="repair">✨ 경계 자동 연결하기</button><div class="secondary-actions"><button type="button" id="original">보정 취소</button><button type="button" id="reset">전체 초기화</button></div></div>
+  <div class="status" id="status" aria-live="polite">샘플을 검사했어요. 경계 연결을 눌러 비교해 보세요.</div>
+  <p class="mini-note">보정은 <strong>맞닿는 가장자리의 색을 부드럽게 섞는 방식</strong>이에요. 무늬의 형태까지 완벽하게 맞추지는 못하므로 반복 미리보기에서도 확인해 주세요.</p>
+ </section>
+ <section class="panel"><div class="results-head"><div><span class="eyelabel">02 · 진단과 결과</span><h2>경계가 얼마나 달라졌을까요?</h2></div><small id="sourceLabel" style="color:#5a7888">샘플 패턴</small></div>
+  <div class="scorecard"><div class="score"><span>원본 경계 색 차이</span><strong id="beforeScore">—</strong><small id="beforeDetail">좌↔우 · 상↔하 픽셀 기준</small></div><div class="score" id="afterBox"><span>보정 후 색 차이</span><strong id="afterScore">—</strong><small id="afterDetail">보정 버튼을 눌러 확인</small></div></div>
+  <div class="notice" id="insight">같은 패턴을 반복할 때 경계가 드러나는지 확인해 보세요.</div>
+  <div class="compare"><div class="viewer"><h3>보정 전 · 3×3 반복</h3><p>가운데와 주변 8개 타일의 연결을 확인하세요.</p><div class="canvaswrap"><canvas id="before" width="576" height="576" aria-label="원본 패턴의 3×3 반복 미리보기"></canvas></div></div><div class="viewer"><h3>보정 후 · 3×3 반복</h3><p>경계 색을 연결한 결과를 원본과 비교하세요.</p><div class="canvaswrap" id="afterWrap"><div class="placeholder" id="placeholder"><span>↗</span>경계 자동 연결을 눌러 보세요.</div><canvas id="after" width="576" height="576" hidden aria-label="보정된 패턴의 3×3 반복 미리보기"></canvas></div></div></div>
+  <p class="legend">점선은 반복 경계 위치만 보여주는 안내선입니다. PNG 저장 시에는 표시되지 않아요.</p>
+  <div class="output"><div><b>결과물: 하나로 이어지는 반복용 타일 PNG</b><small id="exportLabel">경계를 연결하면 다운로드할 수 있어요.</small></div><div class="export-row"><button type="button" id="save" class="primary" disabled>타일 PNG 저장</button><button type="button" id="savePreview" disabled>3×3 확인용 PNG</button></div></div>
+  <p class="footer-note">표시하는 색 차이는 맞닿는 양끝 RGB 채널 절대차의 평균을 0~100%로 환산한 값입니다. 픽셀 경계가 일치하더라도 무늬·질감이 자연스럽게 이어진다는 보장은 없습니다. 이미지의 원본 색과 알파는 흰색 배경에 합성됩니다. 고해상도 인쇄를 위해서는 최종 출력 크기를 별도로 확인하세요.</p>
+ </section>
+</div>
+</main>
+<script>
+'use strict';
 const $=id=>document.getElementById(id);
-const cv=$("tiles"),ctx=cv.getContext("2d"),detail=$("detail"),dctx=detail.getContext("2d");
-let source=null,tile=null,repaired=false,filename="pattern",loadedURL=null;
-function sample(){const c=document.createElement("canvas");c.width=320;c.height=320;const x=c.getContext("2d");x.fillStyle="#e5d8b5";x.fillRect(0,0,320,320);for(let i=0;i<18;i++){const px=(i*97+39)%320,py=(i*67+18)%320;x.fillStyle=["#c2777e","#7a9d9a","#d6ac63","#526c8a"][i%4];x.beginPath();x.ellipse(px,py,10+i%4*7,20+i%3*9,i*.6,0,Math.PI*2);x.fill();}source=c;repaired=false;update();}
-function makeTile(){if(!source)return;const n=Number($("size").value);$("sizeText").textContent=n+"px";const raw=document.createElement("canvas");raw.width=raw.height=n;const x=raw.getContext("2d",{willReadFrequently:true});x.drawImage(source,0,0,n,n);if(!repaired){tile=raw;return;}
-const out=document.createElement("canvas");out.width=out.height=n;const o=out.getContext("2d",{willReadFrequently:true});
-const shift=Math.floor(n/2);const edge=Math.max(8,Math.floor(n*.23));
-o.drawImage(raw,shift,shift,n-shift,n-shift,0,0,n-shift,n-shift);
-o.drawImage(raw,0,shift,shift,n-shift,n-shift,0,shift,n-shift);
-o.drawImage(raw,shift,0,n-shift,shift,0,n-shift,n-shift,shift);
-o.drawImage(raw,0,0,shift,shift,n-shift,n-shift,shift,shift);
-const center=o.getImageData(0,0,n,n),data=center.data;
-const blended=new Uint8ClampedArray(data);
-function index(px,py){return(py*n+px)*4;}
-for(let y=0;y<n;y++)for(let xx=0;xx<n;xx++){
- const distX=Math.min(xx,n-1-xx),distY=Math.min(y,n-1-y);
- const wx=Math.max(0,1-distX/edge),wy=Math.max(0,1-distY/edge);
- const a=index(xx,y),bx=index(n-1-xx,y),by=index(xx,n-1-y),bxy=index(n-1-xx,n-1-y);
- for(let k=0;k<3;k++){const vx=(data[a+k]*(1-wx)+(.5*data[a+k]+.5*data[bx+k])*wx);const vy=(data[a+k]*(1-wy)+(.5*data[a+k]+.5*data[by+k])*wy);blended[a+k]=Math.round((vx+vy)*.5);}
-}
-center.data.set(blended);o.putImageData(center,0,0);
-// Enforce identical opposite edge pixels to guarantee seamless seams.
-const pixels=o.getImageData(0,0,n,n),p=pixels.data;
-for(let y=0;y<n;y++)for(let k=0;k<4;k++){const a=index(0,y)+k,b=index(n-1,y)+k;const avg=Math.round((p[a]+p[b])/2);p[a]=p[b]=avg;}
-for(let xx=0;xx<n;xx++)for(let k=0;k<4;k++){const a=index(xx,0)+k,b=index(xx,n-1)+k;const avg=Math.round((p[a]+p[b])/2);p[a]=p[b]=avg;}
-o.putImageData(pixels,0,0);tile=out;
-}
-function measure(){const n=tile.width,p=tile.getContext("2d").getImageData(0,0,n,n).data;let h=0,v=0;for(let i=0;i<n;i++)for(let k=0;k<3;k++){h+=Math.abs(p[(i*n)*4+k]-p[(i*n+n-1)*4+k]);v+=Math.abs(p[i*4+k]-p[((n-1)*n+i)*4+k]);}return[Math.round(h/(n*3*255)*1000)/10,Math.round(v/(n*3*255)*1000)/10];}
-function update(){makeTile();if(!tile)return;ctx.clearRect(0,0,768,768);const cell=256;for(let y=0;y<3;y++)for(let x=0;x<3;x++)ctx.drawImage(tile,x*cell,y*cell,cell,cell);if($("seams").checked){ctx.strokeStyle="#f6e4ff";ctx.lineWidth=2;ctx.setLineDash([8,7]);for(let i=1;i<3;i++){ctx.beginPath();ctx.moveTo(i*cell,0);ctx.lineTo(i*cell,768);ctx.moveTo(0,i*cell);ctx.lineTo(768,i*cell);ctx.stroke();}ctx.setLineDash([]);}
-const [h,v]=measure();$("horizontal").textContent=h.toFixed(1)+"%";$("vertical").textContent=v.toFixed(1)+"%";
-dctx.clearRect(0,0,768,180);dctx.fillStyle="#0d1829";dctx.fillRect(0,0,768,180);
-dctx.drawImage(tile,0,0,tile.width,Math.floor(tile.height*.18),0,90,384,90);
-dctx.drawImage(tile,0,Math.floor(tile.height*.82),tile.width,Math.ceil(tile.height*.18),0,0,384,90);
-dctx.drawImage(tile,Math.floor(tile.width*.82),0,Math.ceil(tile.width*.18),tile.height,384,0,192,180);
-dctx.drawImage(tile,0,0,Math.floor(tile.width*.18),tile.height,576,0,192,180);
-dctx.strokeStyle="#ffda8b";dctx.lineWidth=3;dctx.beginPath();dctx.moveTo(0,90);dctx.lineTo(384,90);dctx.moveTo(576,0);dctx.lineTo(576,180);dctx.stroke();
-}
-$("repair").addEventListener("click",()=>{repaired=true;update();$("status").textContent="오프셋·블렌딩으로 경계를 연결했습니다. 확대 결과와 수치를 확인하세요.";});
-$("original").addEventListener("click",()=>{repaired=false;update();$("status").textContent="원본 패턴을 복원했습니다.";});
-$("size").addEventListener("input",update);$("seams").addEventListener("change",update);
-$("reset").addEventListener("click",()=>{$("size").value=192;$("seams").checked=true;$("upload").value="";sample();$("status").textContent="샘플로 초기화했습니다.";});
-$("upload").addEventListener("change",e=>{const f=e.target.files?.[0];if(!f)return;if(!["image/png","image/jpeg","image/webp"].includes(f.type)||f.size>12*1024*1024){$("status").textContent="PNG/JPG/WEBP 12MB 이하 파일을 선택해 주세요.";return;}const url=URL.createObjectURL(f),img=new Image();img.onload=()=>{if(loadedURL)URL.revokeObjectURL(loadedURL);loadedURL=url;source=img;filename=f.name.replace(/\.[^.]+$/,"").replace(/[^a-z0-9_-]/gi,"-").slice(0,40)||"pattern";repaired=false;update();$("status").textContent="업로드한 이미지를 로컬에서 분석했습니다.";};img.onerror=()=>{URL.revokeObjectURL(url);$("status").textContent="이미지 파일을 읽을 수 없습니다.";};img.src=url;});
-$("save").addEventListener("click",()=>{if(!tile)return;tile.toBlob(blob=>{if(!blob){$("status").textContent="PNG 생성에 실패했습니다.";return;}const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename+"-seamless-"+tile.width+".png";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);$("status").textContent="현재 타일 PNG 저장을 요청했습니다.";}, "image/png");});
-sample();
-</script></body></html>
+const status=$('status');let source=null,rawTile=null,fixedTile=null,hasRepair=false,sourceName='sample',requestToken=0;
+const beforeCanvas=$('before'),afterCanvas=$('after');
+function say(message,error=false){status.textContent=message;status.classList.toggle('error',error);}
+function canvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+function sampleImage(){requestToken++;const c=canvas(360,360),x=c.getContext('2d');x.fillStyle='#eee2ca';x.fillRect(0,0,360,360);const bg=x.createLinearGradient(0,0,360,360);bg.addColorStop(0,'#e8d7b9');bg.addColorStop(1,'#a9cec3');x.fillStyle=bg;x.fillRect(0,0,360,360);for(let i=0;i<32;i++){const px=(i*97+41)%360,py=(i*59+19)%360;x.save();x.translate(px,py);x.rotate((i*13)%11);x.fillStyle=['#b16473','#d49d58','#497f86','#7375a9'][i%4];x.beginPath();x.ellipse(0,0,8+i%5*3,17+i%4*4,.35,0,Math.PI*2);x.fill();x.restore();}x.fillStyle='#c66b74';x.fillRect(0,0,360,15);x.fillStyle='#365f82';x.fillRect(0,0,17,360);source=c;sourceName='sample';$('sourceLabel').textContent='예제 · 끊어진 경계';$('upload').value='';hasRepair=false;render();say('예제에서 경계 색 차이를 확인한 다음, 「경계 자동 연결하기」를 눌러 보세요.');}
+function normalize(){if(!source)return null;const n=Number($('size').value),c=canvas(n,n),cx=c.getContext('2d',{willReadFrequently:true});cx.fillStyle='#fff';cx.fillRect(0,0,n,n);const scale=Math.max(n/source.width,n/source.height);cx.drawImage(source,(n-source.width*scale)/2,(n-source.height*scale)/2,source.width*scale,source.height*scale);return c;}
+function fixSeam(raw,bandPct){const n=raw.width,c=canvas(n,n),ctx=c.getContext('2d',{willReadFrequently:true});const input=raw.getContext('2d',{willReadFrequently:true}).getImageData(0,0,n,n);const pixels=new Uint8ClampedArray(input.data),band=Math.max(3,Math.floor(n*bandPct/100));const idx=(x,y)=>(y*n+x)*4;const blend=(distance)=>{const t=Math.max(0,Math.min(1,distance/band));return 1-t*t*(3-2*t);};
+ // Match opposite left/right pixels while smoothly fading changes into the center.
+ for(let y=0;y<n;y++)for(let x=0;x<band;x++){const other=n-1-x,a=idx(x,y),b=idx(other,y),weight=blend(x);for(let channel=0;channel<3;channel++){const left=pixels[a+channel],right=pixels[b+channel],avg=(left+right)/2;pixels[a+channel]=Math.round(left*(1-weight)+avg*weight);pixels[b+channel]=Math.round(right*(1-weight)+avg*weight);}}
+ // The same top/bottom operation preserves horizontal edge equality, including corners.
+ for(let x=0;x<n;x++)for(let y=0;y<band;y++){const other=n-1-y,a=idx(x,y),b=idx(x,other),weight=blend(y);for(let channel=0;channel<3;channel++){const top=pixels[a+channel],bottom=pixels[b+channel],avg=(top+bottom)/2;pixels[a+channel]=Math.round(top*(1-weight)+avg*weight);pixels[b+channel]=Math.round(bottom*(1-weight)+avg*weight);}}
+ input.data.set(pixels);ctx.putImageData(input,0,0);return c;}
+function edgeScore(c){const n=c.width,d=c.getContext('2d',{willReadFrequently:true}).getImageData(0,0,n,n).data;let horizontal=0,vertical=0;for(let i=0;i<n;i++)for(let k=0;k<3;k++){horizontal+=Math.abs(d[(i*n)*4+k]-d[(i*n+n-1)*4+k]);vertical+=Math.abs(d[i*4+k]-d[((n-1)*n+i)*4+k]);}return {horizontal:100*horizontal/(n*3*255),vertical:100*vertical/(n*3*255),overall:100*(horizontal+vertical)/(2*n*3*255)};}
+function deltaScore(a,b){const n=a.width,one=a.getContext('2d',{willReadFrequently:true}).getImageData(0,0,n,n).data,two=b.getContext('2d',{willReadFrequently:true}).getImageData(0,0,n,n).data;let sum=0;for(let i=0;i<one.length;i+=4)for(let k=0;k<3;k++)sum+=Math.abs(one[i+k]-two[i+k]);return 100*sum/(n*n*3*255);}
+function preview(tile,target,guide){const ctx=target.getContext('2d');ctx.clearRect(0,0,target.width,target.height);const size=target.width/3;for(let y=0;y<3;y++)for(let x=0;x<3;x++)ctx.drawImage(tile,x*size,y*size,size,size);if(guide){ctx.strokeStyle='#163d46';ctx.lineWidth=1.5;ctx.setLineDash([6,5]);for(let k=1;k<=2;k++){ctx.beginPath();ctx.moveTo(size*k,0);ctx.lineTo(size*k,target.height);ctx.moveTo(0,size*k);ctx.lineTo(target.width,size*k);ctx.stroke();}ctx.setLineDash([]);}}
+function render(){rawTile=normalize();if(!rawTile)return;const before=edgeScore(rawTile),n=rawTile.width;$('sizeLabel').textContent=n+' × '+n+'px';$('blendLabel').textContent=$('blend').value+'%';$('beforeScore').textContent=before.overall.toFixed(1)+'%';$('beforeDetail').textContent='가로 '+before.horizontal.toFixed(1)+'% · 세로 '+before.vertical.toFixed(1)+'%';preview(rawTile,beforeCanvas,$('guides').checked);
+ fixedTile=hasRepair?fixSeam(rawTile,Number($('blend').value)):null;$('after').hidden=!hasRepair;$('placeholder').hidden=hasRepair;$('save').disabled=!hasRepair;$('savePreview').disabled=!hasRepair;$('original').disabled=!hasRepair;
+ if(hasRepair){const after=edgeScore(fixedTile),changed=deltaScore(rawTile,fixedTile);preview(fixedTile,afterCanvas,$('guides').checked);$('afterScore').textContent=after.overall.toFixed(1)+'%';$('afterDetail').textContent='전체 RGB 평균 변화 '+changed.toFixed(1)+'%';$('afterBox').classList.add('good');$('insight').classList.add('ok');$('insight').textContent='✓ 맞닿는 픽셀 경계 차이를 '+before.overall.toFixed(1)+'% → '+after.overall.toFixed(1)+'%로 줄였어요. 이제 3×3 무늬의 연결을 확인하고, 자연스럽다면 PNG를 저장하세요.';$('exportLabel').textContent=n+'×'+n+'px · 투명 영역은 흰색으로 합성 · 외부 전송 없음';}else{$('afterScore').textContent='—';$('afterDetail').textContent='보정 버튼을 눌러 확인';$('afterBox').classList.remove('good');$('insight').classList.remove('ok');$('insight').textContent=before.overall>3?'⚠ 경계 색 차이가 '+before.overall.toFixed(1)+'% 감지됐어요. 오른쪽에 개선된 패턴을 만들어 비교해 보세요.':'경계 색 차이가 '+before.overall.toFixed(1)+'%예요. 무늬 자체의 연결도 3×3 반복 미리보기에서 확인해 보세요.';$('exportLabel').textContent='경계를 연결하면 다운로드할 수 있어요.';}}
+function download(sourceCanvas,filename){sourceCanvas.toBlob(blob=>{if(!blob){say('PNG 생성에 실패했어요. 다시 시도해 주세요.',true);return;}const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);say(filename+' 파일을 저장했어요.');},'image/png');}
+$('sample').addEventListener('click',sampleImage);
+$('repair').addEventListener('click',()=>{hasRepair=true;render();say('경계를 연결했어요. 전후 반복 무늬를 비교하고 PNG를 저장해 보세요.');});
+$('original').addEventListener('click',()=>{hasRepair=false;render();say('보정 결과를 취소했어요. 원본 경계부터 다시 비교할 수 있어요.');});
+$('reset').addEventListener('click',()=>{$('size').value='256';$('blend').value='22';$('guides').checked=true;sampleImage();say('설정과 이미지가 처음 예제로 돌아왔어요.');});
+$('size').addEventListener('change',()=>{render();say('출력 크기를 변경했어요. 현재 진단을 다시 계산했습니다.');});
+$('blend').addEventListener('input',()=>{render();if(hasRepair)say('경계 보정 범위를 바꾸고 결과를 다시 계산했어요.');});
+$('guides').addEventListener('change',render);
+$('save').addEventListener('click',()=>{if(fixedTile)download(fixedTile,sourceName+'-seamless-'+fixedTile.width+'.png');});
+$('savePreview').addEventListener('click',()=>{if(!fixedTile)return;const out=canvas(768,768);preview(fixedTile,out,false);download(out,sourceName+'-3x3-preview.png');});
+$('upload').addEventListener('change',event=>{const file=event.target.files?.[0];if(!file)return;if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>12*1024*1024){say('PNG/JPG/WEBP 형식의 12MB 이하 이미지를 선택해 주세요.',true);event.target.value='';return;}const token=++requestToken;const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{if(token!==requestToken){URL.revokeObjectURL(url);return;}if(img.naturalWidth*img.naturalHeight>24000000){URL.revokeObjectURL(url);say('이미지 픽셀이 너무 커요. 2,400만 픽셀 이하로 줄여 주세요.',true);event.target.value='';return;}source=img;sourceName=file.name.replace(/\.[^.]+$/,'').replace(/[^a-z0-9_-]/gi,'-').slice(0,36)||'pattern';$('sourceLabel').textContent='내 이미지 · '+file.name.slice(0,38);hasRepair=false;render();say('이미지를 브라우저 안에서 불러왔어요. 경계 수치를 보고 보정해 보세요.');URL.revokeObjectURL(url);};img.onerror=()=>{URL.revokeObjectURL(url);say('이미지를 읽지 못했어요. 다른 파일을 선택해 주세요.',true);event.target.value='';};img.src=url;});
+sampleImage();
+</script>
+</body>
+</html>
