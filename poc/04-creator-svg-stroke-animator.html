@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0c1527"><title>CreatorSVGStrokeAnimator · POC 04</title>
+<style>
+:root{color-scheme:dark;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;background:#0c1527;color:#ebf2ff;--panel:#15243c;--stroke:#304765;--accent:#8bd1ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 76% 0,#223b57,transparent 56%),#0c1527;min-height:100vh}main{max-width:1180px;margin:auto;padding:26px 20px 70px}
+a{color:var(--accent)}.top{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;color:#a7b9d1;font-size:13px}
+h1{font-size:clamp(30px,4.6vw,48px);letter-spacing:-.045em;margin:16px 0 3px}p{color:#b4c5da;margin-top:7px}
+.layout{display:grid;grid-template-columns:350px minmax(0,1fr);gap:18px;margin-top:23px}.panel{border-radius:18px;border:1px solid var(--stroke);background:var(--panel);padding:19px;min-width:0}
+h2{font-size:17px;margin:0 0 13px}h3{font-size:15px;margin:22px 0 8px}
+label{display:block;font-weight:700;margin:13px 0 6px}textarea,input[type=file],select,input[type=color]{width:100%;border:1px solid #48607d;border-radius:10px;background:#0d1b31;color:#e6f1ff;padding:10px;font:inherit}
+textarea{height:150px;resize:vertical;font:12px/1.5 ui-monospace,Consolas,monospace;tab-size:2}
+input[type=range]{width:100%;accent-color:#8bd1ff}input[type=color]{height:43px;max-width:100px;padding:4px}
+button{background:#8bd1ff;color:#0a2137;border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:800;cursor:pointer}
+button.secondary{background:#263b58;color:#e4f2ff;border:1px solid #435b7a}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #ffcf74;outline-offset:2px}
+button:disabled{opacity:.5;cursor:not-allowed}.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.row button{flex:1}.small{font-size:12px;color:#9fb1c9}
+.fieldline{display:flex;justify-content:space-between;gap:12px;align-items:center}.fieldline output{color:#a9deff;font-variant-numeric:tabular-nums}
+.stage{background:#0b192c;border:1px solid #344c67;border-radius:15px;display:grid;place-items:center;padding:20px;min-height:320px}
+.stage svg{max-width:100%;max-height:420px;width:100%;height:auto;overflow:visible}
+.controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:15px 0}.controls button{min-width:0}
+#timeline{margin:10px 0 4px}.timeline-label{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.paths{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px;max-height:260px;overflow:auto}
+.paths li{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #3a526f;border-radius:10px;background:#0f1d32}
+.paths .desc{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.paths button{flex:0 0 auto;padding:5px 8px;min-width:35px;background:#2a4463;color:#eaf5ff;border:1px solid #4b6583}
+#status{min-height:38px;color:#bde7ff}#duration,#gap,#width{margin-bottom:4px}
+.hint{margin:14px 0 0;color:#91a6c3;font-size:12px;line-height:1.55}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.stage{min-height:230px}.panel{padding:15px}}
+@media(max-width:500px){main{padding:16px 12px 50px}.controls{grid-template-columns:1fr 1fr}.split{grid-template-columns:1fr 1fr}}
+</style>
+</head><body><main>
+<div class="top"><a href="../index.html">← Service POC 목록</a><span>#04 · 원장 20261108-17-01 · 재평가 92/100</span></div>
+<h1>CreatorSVGStrokeAnimator</h1>
+<p>SVG 선이 손으로 그려지는 효과를 만듭니다. 경로를 붙여넣고 순서와 전체 시간을 바꾼 뒤, 애니메이션이 자동 실행되는 SVG 파일로 저장하세요.</p>
+<div class="layout">
+<section class="panel" aria-labelledby="editHeading">
+<h2 id="editHeading">1. SVG 경로 불러오기</h2>
+<div class="row"><button type="button" id="presetA" class="secondary">산과 해 샘플</button><button type="button" id="presetB" class="secondary">선 그림 샘플</button></div>
+<label for="svgCode">SVG 코드 (path 요소 사용)</label>
+<textarea id="svgCode" spellcheck="false"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220">
+  <path d="M 18 184 L 104 82 L 181 184"/>
+  <path d="M 122 184 L 220 56 L 305 184"/>
+  <path d="M 222 36 A 24 24 0 1 1 222 84 A 24 24 0 1 1 222 36"/>
+  <path d="M 12 199 Q 80 182 150 199 T 307 199"/>
+</svg></textarea>
+<label for="svgFile">또는 로컬 .svg 파일 선택</label><input id="svgFile" type="file" accept=".svg,image/svg+xml">
+<div class="row" style="margin-top:12px"><button id="apply" type="button">SVG 적용하기</button><button id="reset" type="button" class="secondary">초기화</button></div>
+<p class="hint">보안과 단일 파일 구현을 위해 path 요소의 d와 SVG viewBox만 읽습니다. 텍스트·이미지·변형·필터·스크립트·외부 리소스는 실행하지 않습니다. 최대 20개 경로, 300KB 파일.</p>
+<h3>2. 재생 설정</h3>
+<div class="fieldline"><label for="duration">전체 재생 시간</label><output id="durationOut">5.0초</output></div>
+<input id="duration" type="range" min="2" max="15" step=".5" value="5">
+<div class="fieldline"><label for="gap">경로 사이 간격</label><output id="gapOut">150ms</output></div>
+<input id="gap" type="range" min="0" max="600" step="25" value="150">
+<div class="fieldline"><label for="width">선 두께</label><output id="widthOut">4</output></div>
+<input id="width" type="range" min="1" max="12" step=".5" value="4">
+<div class="split"><div><label for="stroke">선 색</label><input id="stroke" type="color" value="#71d4ff"></div>
+<div><label for="orderMode">자동 순서</label><select id="orderMode"><option value="manual">직접 설정</option><option value="long">긴 선 먼저</option><option value="short">짧은 선 먼저</option><option value="reverse">역순</option></select></div></div>
+<h3>3. 그리기 순서</h3><p class="small">↑ ↓ 버튼으로 각 선의 순서를 바꿀 수 있습니다.</p>
+<ol id="pathList" class="paths" aria-label="SVG 경로 순서"></ol>
+</section>
+<section class="panel" aria-labelledby="previewHeading">
+<h2 id="previewHeading">애니메이션 미리보기</h2>
+<div class="stage"><svg id="preview" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" role="img" aria-label="SVG 선 그리기 진행 상황"></svg></div>
+<div class="controls"><button id="play" type="button">▶ 재생</button><button id="pause" type="button" class="secondary">⏸ 일시정지</button><button id="rewind" type="button" class="secondary">↺ 처음부터</button></div>
+<div class="timeline-label"><label for="timeline" style="margin:0">진행 위치</label><span id="clock">0.0 / 5.0초</span></div>
+<input id="timeline" type="range" min="0" max="1000" step="1" value="0" aria-label="애니메이션 위치 이동">
+<div class="row" style="margin-top:18px"><button id="download" type="button">자체 재생 SVG 다운로드</button></div>
+<p id="status" role="status" aria-live="polite">샘플 SVG를 불러오는 중입니다.</p>
+<p class="hint">SVG 파일에는 선 경로와 SMIL 타이밍이 함께 저장됩니다. 파일을 지원 브라우저에서 열면 그리기가 자동 시작합니다. 디자이너 작업용 POC이므로 외부 SVG의 fill, transform, 클리핑, 복잡한 스타일은 보존되지 않습니다.</p>
+<p class="hint">모든 작업은 이 브라우저에서만 처리되며 네트워크 전송·서버 호출·외부 폰트가 없습니다. 실제 사용자 테스트와 브라우저별 호환성 검증은 별도로 필요합니다.</p>
+</section>
+</div></main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const original = $("svgCode").value;
+const second = '<svg viewBox="0 0 320 220"><path d="M 25 182 C 40 52 127 52 142 182"/><path d="M 145 182 C 156 115 205 80 263 138"/><path d="M 42 194 Q 151 212 282 193"/><path d="M 250 39 L 259 59 L 281 61 L 265 76 L 269 97 L 250 86 L 232 97 L 235 76 L 219 61 L 241 59 Z"/></svg>';
+let viewBox=[0,0,320,220], paths=[], shown=[], elapsed=0, playing=false, raf=0, began=0;
+function status(s){$("status").textContent=s;}
+function safeD(s){return typeof s==="string" && s.length>0 && s.length<=8000 && /^[0-9eE+\-.,\sMmLlHhVvCcSsQqTtAaZz]+$/.test(s);}
+function parseInput(source){
+ if(source.length>300000) throw Error("입력 크기 300KB를 초과했습니다.");
+ let ds=[], vb=[0,0,320,220];
+ if(source.trim().startsWith("<")){
+  const doc=new DOMParser().parseFromString(source,"image/svg+xml");
+  if(doc.querySelector("parsererror")) throw Error("SVG XML 구문이 잘못되었습니다.");
+  const root=doc.documentElement;
+  if(root.localName!=="svg") throw Error("SVG 최상위 요소가 필요합니다.");
+  const raw=(root.getAttribute("viewBox")||"0 0 320 220").trim().split(/[\s,]+/).map(Number);
+  if(raw.length===4&&raw.every(Number.isFinite)&&raw[2]>0&&raw[3]>0&&raw[2]<100000&&raw[3]<100000)vb=raw;
+  ds=Array.from(root.getElementsByTagName("path")).map(p=>p.getAttribute("d")||"");
+ }else{ds=source.split(/\n+/).map(s=>s.trim()).filter(Boolean);}
+ if(ds.length===0||ds.length>20)throw Error("1~20개의 유효한 path 경로가 필요합니다.");
+ if(ds.some(s=>!safeD(s)))throw Error("경로에 지원하지 않는 문자 또는 길이 제한 초과가 있습니다.");
+ return {vb:vb,ds:ds};
+}
+function createSVGPath(d){
+ const p=document.createElementNS(NS,"path");
+ p.setAttribute("d",d); p.setAttribute("fill","none"); p.setAttribute("stroke",$("stroke").value);
+ p.setAttribute("stroke-width",$("width").value); p.setAttribute("stroke-linecap","round");p.setAttribute("stroke-linejoin","round");
+ return p;
+}
+function updateStyle(){
+ shown.forEach(p=>{p.node.setAttribute("stroke",$("stroke").value);p.node.setAttribute("stroke-width",$("width").value);});
+ $("widthOut").textContent=$("width").value;
+}
+function settings(){
+ const total=Number($("duration").value)*1000,n=Math.max(1,shown.length);
+ const gap=Math.min(Number($("gap").value),total/(n*2));
+ return {total:total,gap:gap,step:(total-gap*(n-1))/n};
+}
+function drawAt(ms){
+ const s=settings();elapsed=Math.max(0,Math.min(s.total,ms));
+ shown.forEach((p,i)=>{
+  const start=i*(s.step+s.gap);
+  const ratio=Math.max(0,Math.min(1,(elapsed-start)/s.step));
+  p.node.style.strokeDashoffset=String(p.len*(1-ratio));
+ });
+ $("timeline").value=String(Math.round(elapsed/s.total*1000));
+ $("clock").textContent=(elapsed/1000).toFixed(1)+" / "+(s.total/1000).toFixed(1)+"초";
+}
+function stop(){if(raf)cancelAnimationFrame(raf);raf=0;playing=false;began=0;}
+function tick(t){
+ if(!playing)return;
+ if(!began)began=t-elapsed;
+ drawAt(t-began);
+ if(elapsed>=settings().total){stop();status("재생 완료. 시간을 조정하거나 SVG 파일을 저장해 보세요.");return;}
+ raf=requestAnimationFrame(tick);
+}
+function play(){if(!shown.length)return;stop();if(elapsed>=settings().total)drawAt(0);playing=true;began=0;raf=requestAnimationFrame(tick);status("경로 "+shown.length+"개를 순서대로 그리는 중입니다.");}
+function listPaths(){
+ const list=$("pathList");list.replaceChildren();
+ shown.forEach((p,i)=>{
+  const li=document.createElement("li"),desc=document.createElement("span");
+  desc.className="desc";desc.textContent=(i+1)+". 경로 "+p.source+" ("+Math.round(p.len)+"px)";
+  li.appendChild(desc);
+  [["↑",-1],["↓",1]].forEach(pair=>{
+   const btn=document.createElement("button");btn.type="button";btn.textContent=pair[0];
+   btn.setAttribute("aria-label","경로 "+p.source+" "+(pair[1]===-1?"위로":"아래로")+" 이동");
+   btn.disabled=i+pair[1]<0||i+pair[1]>=shown.length;
+   btn.addEventListener("click",()=>{stop();const j=i+pair[1];[shown[i],shown[j]]=[shown[j],shown[i]];$("orderMode").value="manual";rebuild();status("경로 순서를 변경했습니다.");});
+   li.appendChild(btn);
+  });list.appendChild(li);
+ });
+}
+function rebuild(){
+ const stage=$("preview");stage.replaceChildren();
+ stage.setAttribute("viewBox",viewBox.join(" "));
+ shown.forEach(p=>{p.node=createSVGPath(p.d);stage.appendChild(p.node);});
+ shown.forEach(p=>{
+  try{p.len=Math.max(1,p.node.getTotalLength());}catch(e){p.len=1;}
+  p.node.style.strokeDasharray=String(p.len);p.node.style.strokeDashoffset=String(p.len);
+ });
+ listPaths();updateStyle();drawAt(0);
+}
+function load(source){
+ const data=parseInput(source);
+ stop();viewBox=data.vb;paths=data.ds.map((d,i)=>({d:d,source:i+1,len:1,node:null}));shown=paths.slice();
+ $("orderMode").value="manual";rebuild();status("SVG 경로 "+shown.length+"개가 준비됐습니다. 재생을 눌러 확인하세요.");
+}
+function autoSort(mode){
+ if(mode==="manual")return;
+ stop();if(mode==="reverse")shown.reverse();
+ if(mode==="long")shown.sort((a,b)=>b.len-a.len);
+ if(mode==="short")shown.sort((a,b)=>a.len-b.len);
+ rebuild();status("경로 순서를 재배치했습니다.");
+}
+function xml(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function exportSVG(){
+ if(!shown.length)return;
+ const s=settings();let lines=[];
+ shown.forEach((p,i)=>{
+  const start=Math.round(i*(s.step+s.gap)),dur=Math.round(s.step),len=Math.ceil(p.len*100)/100;
+  lines.push('<path d="'+xml(p.d)+'" fill="none" stroke="'+xml($("stroke").value)+'" stroke-width="'+Number($("width").value)+'" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="'+len+'" stroke-dashoffset="'+len+'"><animate attributeName="stroke-dashoffset" from="'+len+'" to="0" begin="'+start+'ms" dur="'+dur+'ms" fill="freeze"/></path>');
+ });
+ const body='<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="'+NS+'" viewBox="'+viewBox.join(" ")+'" role="img" aria-label="Animated line drawing">\n'+lines.join("\n")+'\n</svg>\n';
+ const blob=new Blob([body],{type:"image/svg+xml;charset=utf-8"}),url=URL.createObjectURL(blob);
+ const a=document.createElement("a");a.href=url;a.download="stroke-animation.svg";document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),60000);
+ status("독립형 애니메이션 SVG 파일을 생성했습니다. 다운로드 후 브라우저에서 열어 확인하세요.");
+}
+$("apply").addEventListener("click",()=>{try{load($("svgCode").value);}catch(e){status("불러오기 실패: "+e.message);}});
+$("svgFile").addEventListener("change",async e=>{
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ if(file.size>300000){status("SVG 파일은 300KB 이하여야 합니다.");return;}
+ try{const txt=await file.text();$("svgCode").value=txt;load(txt);}catch(err){status("파일 처리 실패: "+err.message);}
+});
+$("presetA").addEventListener("click",()=>{$("svgCode").value=original;load(original);});
+$("presetB").addEventListener("click",()=>{$("svgCode").value=second;load(second);});
+$("reset").addEventListener("click",()=>{
+ stop();$("svgCode").value=original;$("svgFile").value="";$("duration").value="5";$("gap").value="150";$("width").value="4";$("stroke").value="#71d4ff";syncControls();load(original);status("모든 설정을 초기화했습니다.");
+});
+function syncControls(){
+ $("durationOut").textContent=Number($("duration").value).toFixed(1)+"초";
+ $("gapOut").textContent=$("gap").value+"ms";$("widthOut").textContent=$("width").value;
+}
+["duration","gap","width","stroke"].forEach(id=>$(id).addEventListener("input",()=>{
+ const was=elapsed/Math.max(1,settings().total);stop();syncControls();updateStyle();
+ if(id==="duration"||id==="gap")drawAt(was*settings().total);
+}));
+$("orderMode").addEventListener("change",e=>autoSort(e.target.value));
+$("play").addEventListener("click",play);
+$("pause").addEventListener("click",()=>{stop();status("일시정지했습니다. 재생 버튼으로 이어서 볼 수 있습니다.");});
+$("rewind").addEventListener("click",()=>{stop();drawAt(0);status("처음 위치로 돌아왔습니다.");});
+$("timeline").addEventListener("input",e=>{stop();drawAt(Number(e.target.value)/1000*settings().total);status("진행 위치를 직접 이동했습니다.");});
+$("download").addEventListener("click",exportSVG);
+syncControls();try{load(original);}catch(e){status("초기 예제 오류: "+e.message);}
+</script>
+</body></html>
