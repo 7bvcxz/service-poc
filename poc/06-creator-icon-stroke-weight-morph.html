@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CreatorIconStrokeWeightMorph · Service POC</title>
+<style>:root{font-family:system-ui,sans-serif;color-scheme:dark;background:#0b1020;color:#eaf1ff}*{box-sizing:border-box}body{margin:0;padding:28px}main{max-width:1050px;margin:auto}h1{font-size:clamp(25px,4vw,40px);margin:10px 0}p{color:#aebcd4;line-height:1.6}.grid{display:grid;grid-template-columns:300px 1fr;gap:20px}.panel{background:#171f35;border:1px solid #34415d;border-radius:18px;padding:22px}label{display:block;margin:18px 0 7px;font-weight:650}input[type=range]{width:100%;accent-color:#a78bfa}button,select{background:#293654;border:1px solid #506283;border-radius:9px;color:white;padding:10px 14px;cursor:pointer}button:hover{background:#405279}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.tile{text-align:center;background:#10192e;border-radius:14px;padding:16px 8px}.tile svg{width:min(100%,160px);height:auto;overflow:visible}.tile small{display:block;color:#aab8cf;margin-top:8px}output{color:#c4b5fd}.hint{font-size:13px}.status{color:#86efac;min-height:25px}@media(max-width:760px){body{padding:16px}.grid{grid-template-columns:1fr}.preview{gap:6px}.tile{padding:8px 2px}}</style></head>
+<body><main><p>Service POC · 원장 ID 20261111-00-10 · 재평가 91/100</p><h1>CreatorIconStrokeWeightMorph</h1><p>아이콘 선 굵기가 달라지는 순간을 직접 설계해 보세요. 시작·끝 굵기와 애니메이션 시간을 바꾸고, 재생하거나 독립 SVG 애니메이션으로 저장할 수 있습니다. 이 실험은 기본 도형 3종의 선 굵기 변화만 다룹니다.</p>
+<div class="grid"><section class="panel"><label for="shape">아이콘 모양</label><select id="shape"><option value="home">집</option><option value="heart">하트</option><option value="search">돋보기</option></select>
+<label for="from">시작 선 굵기 <output id="fromVal">2</output></label><input id="from" type="range" min="1" max="12" step=".5" value="2">
+<label for="to">끝 선 굵기 <output id="toVal">9</output></label><input id="to" type="range" min="1" max="12" step=".5" value="9">
+<label for="duration">왕복 시간 <output id="durationVal">1600 ms</output></label><input id="duration" type="range" min="400" max="4000" step="100" value="1600">
+<label for="progress">수동 프레임 <output id="progressVal">0%</output></label><input id="progress" type="range" min="0" max="100" value="0">
+<div class="actions"><button id="play">▶ 재생</button><button id="reset">초기화</button><button id="save">애니메이션 SVG 저장</button></div><p class="hint">사용법: 모양과 굵기를 조정한 뒤 재생을 누르세요. 수동 프레임을 움직이면 그 시점의 선 굵기가 즉시 적용됩니다. 다운로드한 SVG는 오프라인에서도 재생됩니다.</p><div id="status" class="status" role="status" aria-live="polite"></div></section>
+<section class="panel"><h2>굵기 비교</h2><div class="preview"><div class="tile"><svg id="startSvg" viewBox="0 0 100 100" aria-label="시작 상태"></svg><small>시작</small></div><div class="tile"><svg id="currentSvg" viewBox="0 0 100 100" aria-label="현재 프레임"></svg><small>현재 <span id="currentWeight"></span></small></div><div class="tile"><svg id="endSvg" viewBox="0 0 100 100" aria-label="끝 상태"></svg><small>끝</small></div></div><p class="hint">선 중심은 고정하고 stroke-width만 보간합니다. 복잡한 벡터 경로의 형태 보존이나 실제 플랫폼별 광학 보정은 검증하지 않습니다.</p></section></div></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const defaults={shape:'home',from:2,to:9,duration:1600,progress:0};
+const shapes={
+home:'<path d="M18 46 L50 18 L82 46 V82 H59 V58 H41 V82 H18 Z"/>',
+heart:'<path d="M50 82 C36 69 14 55 14 36 C14 14 40 12 50 30 C60 12 86 14 86 36 C86 55 64 69 50 82 Z"/>',
+search:'<circle cx="44" cy="43" r="24"/><path d="M62 62 L85 85"/>'
+};
+let raf=0,playing=false,started=0;
+function weight(p){return Number($('from').value)+(Number($('to').value)-Number($('from').value))*p;}
+function icon(w){return '<g fill="none" stroke="#a78bfa" stroke-width="'+w.toFixed(2)+'" stroke-linecap="round" stroke-linejoin="round">'+shapes[$('shape').value]+'</g>';}
+function render(){const p=Number($('progress').value)/100;$('startSvg').innerHTML=icon(Number($('from').value));$('endSvg').innerHTML=icon(Number($('to').value));$('currentSvg').innerHTML=icon(weight(p));$('currentWeight').textContent=weight(p).toFixed(1)+'px';for(const id of ['from','to'])$(id+'Val').textContent=$(id).value;$('durationVal').textContent=$('duration').value+' ms';$('progressVal').textContent=$('progress').value+'%';}
+function stop(){cancelAnimationFrame(raf);playing=false;$('play').textContent='▶ 재생';}
+function tick(now){if(!playing)return;const period=Number($('duration').value);const phase=((now-started)%period)/period;const p=phase<=.5?phase*2:(1-phase)*2;$('progress').value=Math.round(p*100);render();raf=requestAnimationFrame(tick);}
+$('play').addEventListener('click',()=>{if(playing){stop();return;}playing=true;started=performance.now();$('play').textContent='Ⅱ 정지';$('status').textContent='재생 중';raf=requestAnimationFrame(tick);});
+for(const id of ['shape','from','to','duration','progress'])$(id).addEventListener('input',()=>{if(playing)stop();$('status').textContent='미리보기 갱신';render();});
+$('reset').addEventListener('click',()=>{stop();for(const [id,value]of Object.entries(defaults))$(id).value=value;render();$('status').textContent='기본값으로 초기화했습니다.';});
+$('save').addEventListener('click',()=>{const a=Number($('from').value),b=Number($('to').value),d=Number($('duration').value);const body=shapes[$('shape').value];const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="256" height="256"><g fill="none" stroke="#a78bfa" stroke-linecap="round" stroke-linejoin="round" stroke-width="'+a+'">'+body+'<animate attributeName="stroke-width" values="'+a+';'+b+';'+a+'" dur="'+d+'ms" repeatCount="indefinite"/></g></svg>';const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));const link=document.createElement('a');link.href=url;link.download='icon-stroke-morph.svg';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='SVG 파일을 저장했습니다.';});
+render();
+</script></body></html>
