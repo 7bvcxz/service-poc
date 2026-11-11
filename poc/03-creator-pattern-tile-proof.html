@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CreatorPatternTileProof · POC 03</title>
+<style>
+:root{font:15px/1.5 system-ui,-apple-system,sans-serif;color-scheme:dark;background:#0b1220;color:#eff6ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0,#233a57,transparent 55%),#0b1220}main{max-width:1160px;margin:auto;padding:24px 18px 60px}a{color:#93c5fd}h1{font-size:clamp(29px,5vw,48px);letter-spacing:-.05em;margin:18px 0 4px}p{color:#a9bdd5}.top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:300px 1fr;gap:18px;margin-top:22px}.card{background:#142139;border:1px solid #314762;border-radius:18px;padding:18px}.card h2{margin:0 0 12px;font-size:18px}label{display:block;margin:16px 0 7px;color:#dce8f6;font-weight:650}input[type=file]{width:100%;padding:10px;background:#223550;border-radius:10px}input[type=range]{width:100%;accent-color:#8ac9ff}button{border:0;background:#8ac9ff;color:#09213b;border-radius:11px;padding:12px 16px;font-weight:800;cursor:pointer}button.secondary{background:#263b56;color:#e3efff}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.buttons button{flex:1}.preview{display:grid;place-items:center;background:#0a1729;border-radius:14px;padding:14px;min-height:400px}canvas{max-width:100%;height:auto;border-radius:8px;image-rendering:auto}.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.metric{background:#213450;border-radius:10px;padding:12px}.metric small{display:block;color:#a5bbd3}.metric strong{font-size:23px}#status{color:#b7ddff;min-height:3em}.hint{font-size:12px;color:#9cb2cd}.toggle{display:flex;align-items:center;gap:10px}.toggle label{margin:0}@media(max-width:760px){.grid{grid-template-columns:1fr}.preview{min-height:260px}.card{padding:14px}}
+</style></head><body><main>
+<div class="top"><a href="../index.html">← Service POC 목록</a><span style="color:#a2b4cb">#03 · 20261108-19-10 · 재평가 93/100</span></div>
+<h1>CreatorPatternTileProof</h1><p>이미지를 3×3 타일로 반복해 네 변의 연결 오차를 눈으로 확인하고, 경계가 이어지는 패턴으로 변환해 보세요.</p>
+<div class="grid"><section class="card"><h2>패턴 설정</h2>
+<label for="upload">패턴 이미지 (PNG/JPG/WEBP)</label><input type="file" id="upload" accept="image/png,image/jpeg,image/webp">
+<label for="size">검사 해상도 <span id="sizeText">192px</span></label><input id="size" type="range" min="96" max="384" step="32" value="192">
+<div class="toggle" style="margin:15px 0"><input type="checkbox" id="seams" checked><label for="seams">경계 강조선 표시</label></div>
+<div class="buttons"><button id="repair">경계 자동 연결</button><button id="original" class="secondary">원본으로</button></div>
+<div class="buttons"><button id="save" class="secondary">타일 PNG 저장</button><button id="reset" class="secondary">초기화</button></div>
+<h2 style="margin-top:25px">경계 오차</h2><div class="metrics"><div class="metric"><small>좌 ↔ 우</small><strong id="horizontal">—</strong></div><div class="metric"><small>상 ↔ 하</small><strong id="vertical">—</strong></div></div>
+<p id="status" aria-live="polite">샘플 패턴이 준비됐습니다. 경계 자동 연결을 눌러 변화를 비교해 보세요.</p>
+<p class="hint">오차는 가장자리 RGB 차이의 평균을 0~100으로 환산한 참고 지표입니다. 0에 가까울수록 연결이 자연스럽습니다.</p></section>
+<section class="card"><h2>3×3 반복 미리보기</h2><div class="preview"><canvas id="tiles" width="768" height="768" aria-label="9개 타일의 경계 연결 미리보기"></canvas></div><p class="hint">중앙 타일과 주변 8개 타일이 반복됩니다. 경계선은 다운로드에 포함되지 않습니다.</p>
+<h2>경계 확대</h2><div class="preview" style="min-height:140px"><canvas id="detail" width="768" height="180" aria-label="수평 수직 경계 확대 비교"></canvas></div></section></div>
+<p class="hint">모든 처리는 브라우저 안에서 진행됩니다. 자동 연결은 오프셋과 부드러운 블렌딩을 이용한 간단한 POC이며 정교한 패턴 생성 AI는 아닙니다.</p>
+</main><script>
+"use strict";
+const $=id=>document.getElementById(id);
+const cv=$("tiles"),ctx=cv.getContext("2d"),detail=$("detail"),dctx=detail.getContext("2d");
+let source=null,tile=null,repaired=false,filename="pattern",loadedURL=null;
+function sample(){const c=document.createElement("canvas");c.width=320;c.height=320;const x=c.getContext("2d");x.fillStyle="#e5d8b5";x.fillRect(0,0,320,320);for(let i=0;i<18;i++){const px=(i*97+39)%320,py=(i*67+18)%320;x.fillStyle=["#c2777e","#7a9d9a","#d6ac63","#526c8a"][i%4];x.beginPath();x.ellipse(px,py,10+i%4*7,20+i%3*9,i*.6,0,Math.PI*2);x.fill();}source=c;repaired=false;update();}
+function makeTile(){if(!source)return;const n=Number($("size").value);$("sizeText").textContent=n+"px";const raw=document.createElement("canvas");raw.width=raw.height=n;const x=raw.getContext("2d",{willReadFrequently:true});x.drawImage(source,0,0,n,n);if(!repaired){tile=raw;return;}
+const out=document.createElement("canvas");out.width=out.height=n;const o=out.getContext("2d",{willReadFrequently:true});
+const shift=Math.floor(n/2);const edge=Math.max(8,Math.floor(n*.23));
+o.drawImage(raw,shift,shift,n-shift,n-shift,0,0,n-shift,n-shift);
+o.drawImage(raw,0,shift,shift,n-shift,n-shift,0,shift,n-shift);
+o.drawImage(raw,shift,0,n-shift,shift,0,n-shift,n-shift,shift);
+o.drawImage(raw,0,0,shift,shift,n-shift,n-shift,shift,shift);
+const center=o.getImageData(0,0,n,n),data=center.data;
+const blended=new Uint8ClampedArray(data);
+function index(px,py){return(py*n+px)*4;}
+for(let y=0;y<n;y++)for(let xx=0;xx<n;xx++){
+ const distX=Math.min(xx,n-1-xx),distY=Math.min(y,n-1-y);
+ const wx=Math.max(0,1-distX/edge),wy=Math.max(0,1-distY/edge);
+ const a=index(xx,y),bx=index(n-1-xx,y),by=index(xx,n-1-y),bxy=index(n-1-xx,n-1-y);
+ for(let k=0;k<3;k++){const vx=(data[a+k]*(1-wx)+(.5*data[a+k]+.5*data[bx+k])*wx);const vy=(data[a+k]*(1-wy)+(.5*data[a+k]+.5*data[by+k])*wy);blended[a+k]=Math.round((vx+vy)*.5);}
+}
+center.data.set(blended);o.putImageData(center,0,0);
+// Enforce identical opposite edge pixels to guarantee seamless seams.
+const pixels=o.getImageData(0,0,n,n),p=pixels.data;
+for(let y=0;y<n;y++)for(let k=0;k<4;k++){const a=index(0,y)+k,b=index(n-1,y)+k;const avg=Math.round((p[a]+p[b])/2);p[a]=p[b]=avg;}
+for(let xx=0;xx<n;xx++)for(let k=0;k<4;k++){const a=index(xx,0)+k,b=index(xx,n-1)+k;const avg=Math.round((p[a]+p[b])/2);p[a]=p[b]=avg;}
+o.putImageData(pixels,0,0);tile=out;
+}
+function measure(){const n=tile.width,p=tile.getContext("2d").getImageData(0,0,n,n).data;let h=0,v=0;for(let i=0;i<n;i++)for(let k=0;k<3;k++){h+=Math.abs(p[(i*n)*4+k]-p[(i*n+n-1)*4+k]);v+=Math.abs(p[i*4+k]-p[((n-1)*n+i)*4+k]);}return[Math.round(h/(n*3*255)*1000)/10,Math.round(v/(n*3*255)*1000)/10];}
+function update(){makeTile();if(!tile)return;ctx.clearRect(0,0,768,768);const cell=256;for(let y=0;y<3;y++)for(let x=0;x<3;x++)ctx.drawImage(tile,x*cell,y*cell,cell,cell);if($("seams").checked){ctx.strokeStyle="#f6e4ff";ctx.lineWidth=2;ctx.setLineDash([8,7]);for(let i=1;i<3;i++){ctx.beginPath();ctx.moveTo(i*cell,0);ctx.lineTo(i*cell,768);ctx.moveTo(0,i*cell);ctx.lineTo(768,i*cell);ctx.stroke();}ctx.setLineDash([]);}
+const [h,v]=measure();$("horizontal").textContent=h.toFixed(1)+"%";$("vertical").textContent=v.toFixed(1)+"%";
+dctx.clearRect(0,0,768,180);dctx.fillStyle="#0d1829";dctx.fillRect(0,0,768,180);
+dctx.drawImage(tile,0,0,tile.width,Math.floor(tile.height*.18),0,90,384,90);
+dctx.drawImage(tile,0,Math.floor(tile.height*.82),tile.width,Math.ceil(tile.height*.18),0,0,384,90);
+dctx.drawImage(tile,Math.floor(tile.width*.82),0,Math.ceil(tile.width*.18),tile.height,384,0,192,180);
+dctx.drawImage(tile,0,0,Math.floor(tile.width*.18),tile.height,576,0,192,180);
+dctx.strokeStyle="#ffda8b";dctx.lineWidth=3;dctx.beginPath();dctx.moveTo(0,90);dctx.lineTo(384,90);dctx.moveTo(576,0);dctx.lineTo(576,180);dctx.stroke();
+}
+$("repair").addEventListener("click",()=>{repaired=true;update();$("status").textContent="오프셋·블렌딩으로 경계를 연결했습니다. 확대 결과와 수치를 확인하세요.";});
+$("original").addEventListener("click",()=>{repaired=false;update();$("status").textContent="원본 패턴을 복원했습니다.";});
+$("size").addEventListener("input",update);$("seams").addEventListener("change",update);
+$("reset").addEventListener("click",()=>{$("size").value=192;$("seams").checked=true;$("upload").value="";sample();$("status").textContent="샘플로 초기화했습니다.";});
+$("upload").addEventListener("change",e=>{const f=e.target.files?.[0];if(!f)return;if(!["image/png","image/jpeg","image/webp"].includes(f.type)||f.size>12*1024*1024){$("status").textContent="PNG/JPG/WEBP 12MB 이하 파일을 선택해 주세요.";return;}const url=URL.createObjectURL(f),img=new Image();img.onload=()=>{if(loadedURL)URL.revokeObjectURL(loadedURL);loadedURL=url;source=img;filename=f.name.replace(/\.[^.]+$/,"").replace(/[^a-z0-9_-]/gi,"-").slice(0,40)||"pattern";repaired=false;update();$("status").textContent="업로드한 이미지를 로컬에서 분석했습니다.";};img.onerror=()=>{URL.revokeObjectURL(url);$("status").textContent="이미지 파일을 읽을 수 없습니다.";};img.src=url;});
+$("save").addEventListener("click",()=>{if(!tile)return;tile.toBlob(blob=>{if(!blob){$("status").textContent="PNG 생성에 실패했습니다.";return;}const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename+"-seamless-"+tile.width+".png";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);$("status").textContent="현재 타일 PNG 저장을 요청했습니다.";}, "image/png");});
+sample();
+</script></body></html>
