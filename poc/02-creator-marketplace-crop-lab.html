@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CreatorMarketplaceCropLab — Service POC 02</title>
+<style>
+:root{font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;background:#0b1220;color:#eff6ff}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 80% -10%,#183b5e,transparent 50%),#0b1220;min-height:100vh}main{max-width:1120px;margin:auto;padding:24px 18px 64px}
+a{color:#91c7ff;text-decoration:none}h1{font-size:clamp(28px,5vw,48px);letter-spacing:-.05em;margin:15px 0 8px}p{color:#b3c2d6}
+.header{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.meta{color:#88a3c1;font-size:12px}.layout{display:grid;grid-template-columns:315px minmax(0,1fr);gap:18px;margin-top:24px}
+.card{background:#131f32;border:1px solid #2e445f;border-radius:18px;padding:20px}.card h2{font-size:17px;margin:0 0 14px}
+.file{display:block;padding:16px;border:1px dashed #6381aa;border-radius:12px;background:#1a2b45;cursor:pointer;text-align:center}
+.file:hover{border-color:#a9d1ff}.file input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+fieldset{border:0;padding:0;margin:20px 0}legend{font-weight:700;margin:0 0 10px}
+.preset{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.preset button{background:#20344e;color:#d9e7f7;border:1px solid #3a5679;padding:11px 8px;border-radius:10px;cursor:pointer}
+.preset button[aria-pressed=true]{background:#2168a3;color:white;border-color:#72bafc}
+button.primary{padding:14px 18px;width:100%;border:0;border-radius:11px;color:#081a2b;background:#8fc9ff;font-weight:750;cursor:pointer}
+button:focus-visible,.file:focus-within{outline:3px solid white;outline-offset:2px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}input[type=range]{width:100%;accent-color:#77bcff}
+.preview{display:grid;place-items:center;background:#0b1626;border-radius:16px;min-height:440px;padding:20px;overflow:hidden}
+canvas{display:block;max-width:100%;max-height:570px;border:2px solid #f6fbff40;border-radius:5px;box-shadow:0 20px 70px #0008;cursor:grab;touch-action:none}
+canvas:active{cursor:grabbing}.tips{font-size:13px;color:#9cafc8;margin-top:12px}.status{margin-top:14px;color:#aad6ff;font-size:14px}
+@media(max-width:780px){.layout{grid-template-columns:1fr}.preview{min-height:300px;padding:12px}.card{padding:16px}}
+</style></head>
+<body><main>
+<header class="header"><a href="../index.html">← Service POC 목록</a><span class="meta">#02 · 20261108-18-01 · 재평가 94/100</span></header>
+<h1>CreatorMarketplaceCropLab</h1>
+<p>제품 사진 한 장을 마켓별 비율에 맞춰 잘라보자. 사진은 서버로 전송되지 않고 브라우저 안에서만 처리돼.</p>
+<div class="layout">
+<section class="card" aria-label="크롭 설정">
+<h2>크롭 작업실</h2>
+<label class="file" for="upload">📷 <strong>제품 사진 업로드</strong><br><small>PNG / JPG / WEBP · 15MB 이하</small><input id="upload" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<fieldset><legend>마켓 이미지 비율</legend><div class="preset" id="presets">
+<button type="button" data-ratio="1" aria-pressed="true">정사각형 · 1:1</button>
+<button type="button" data-ratio="0.8" aria-pressed="false">세로형 · 4:5</button>
+<button type="button" data-ratio="0.75" aria-pressed="false">세로형 · 3:4</button>
+<button type="button" data-ratio="1.7777777778" aria-pressed="false">가로형 · 16:9</button>
+</div></fieldset>
+<div class="row"><label for="zoom">이미지 확대</label><span id="zoomText">100%</span></div><input id="zoom" type="range" min="100" max="250" value="100" step="1">
+<div class="row" style="margin:14px 0"><label for="safe">안전 영역 가이드</label><input id="safe" type="checkbox" checked></div>
+<button class="primary" type="button" id="download">현재 비율 PNG 저장</button>
+<button type="button" id="reset" style="margin-top:9px;background:#213752;color:#dceaff;border:0;border-radius:10px;width:100%;padding:10px;cursor:pointer">위치·확대 초기화</button>
+<p class="tips">미리보기를 손가락이나 마우스로 드래그해 피사체 위치를 조정해. 비율을 바꾸면서 잘림 여부를 즉시 확인할 수 있어.</p>
+<div id="status" class="status" aria-live="polite">샘플 이미지를 표시 중 · 사진을 올려 실험해봐.</div>
+</section>
+<section class="card"><h2>실시간 안전 크롭 미리보기</h2><div class="preview"><canvas id="preview" width="720" height="720" aria-label="제품 사진 크롭 결과"></canvas></div>
+<div class="tips">점선 영역은 잘림 위험을 살펴보기 위한 10% 안전 가이드이며 다운로드된 PNG에는 포함되지 않아.</div></section>
+</div>
+<p class="tips">로컬 POC · 마켓별 실제 규격은 판매 채널 정책을 별도 확인해야 해. 배경 제거·AI 피사체 자동인식은 포함하지 않음.</p>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id),canvas=$("preview"),ctx=canvas.getContext("2d"),file=$("upload");
+let image,ratio=1,zoom=1,offsetX=0,offsetY=0,sourceURL=null,drag=null;
+function sample(){
+ const c=document.createElement("canvas");c.width=700;c.height=700;const x=c.getContext("2d");
+ const bg=x.createLinearGradient(0,0,700,700);bg.addColorStop(0,"#f3e7dc");bg.addColorStop(1,"#cab9a5");x.fillStyle=bg;x.fillRect(0,0,700,700);
+ x.fillStyle="#b6a48b";x.beginPath();x.ellipse(350,580,195,28,0,0,Math.PI*2);x.fill();
+ x.fillStyle="#9b654e";x.beginPath();x.roundRect(225,260,250,295,36);x.fill();
+ x.fillStyle="#f0b28d";x.fillRect(246,278,208,220);
+ x.fillStyle="#ad674d";x.fillRect(230,260,240,40);x.fillRect(240,518,220,30);
+ x.fillStyle="#fff3e4";x.textAlign="center";x.font="bold 33px sans-serif";x.fillText("CREATOR",350,375);x.font="22px sans-serif";x.fillText("sample product",350,410);
+ x.fillStyle="#efe6de";x.beginPath();x.arc(355,215,40,0,Math.PI*2);x.fill();
+ const img=new Image();img.onload=()=>{image=img;render();};img.src=c.toDataURL("image/png");
+}
+function dimensions(){
+ let w=720,h=Math.round(w/ratio);if(h>1000){h=1000;w=Math.round(h*ratio);}
+ return [w,h];
+}
+function clampOffsets(){
+ if(!image)return;
+ const w=canvas.width,h=canvas.height,s=Math.max(w/image.width,h/image.height)*zoom;
+ const mx=Math.max(0,(image.width*s-w)/2),my=Math.max(0,(image.height*s-h)/2);
+ offsetX=Math.max(-mx,Math.min(mx,offsetX));offsetY=Math.max(-my,Math.min(my,offsetY));
+}
+function paint(target,w,h,guide){
+ const s=Math.max(w/image.width,h/image.height)*zoom;
+ const cx=w/2+offsetX*w/canvas.width,cy=h/2+offsetY*h/canvas.height;
+ target.fillStyle="#fff";target.fillRect(0,0,w,h);
+ target.drawImage(image,cx-image.width*s/2,cy-image.height*s/2,image.width*s,image.height*s);
+ if(guide){
+  const pad=Math.min(w,h)*.1;target.save();target.strokeStyle="#fff";target.lineWidth=3;
+  target.setLineDash([12,8]);target.strokeRect(pad,pad,w-2*pad,h-2*pad);
+  target.strokeStyle="#132c4d";target.lineDashOffset=10;target.strokeRect(pad,pad,w-2*pad,h-2*pad);target.restore();
+ }
+}
+function render(){
+ if(!image)return;const [w,h]=dimensions();canvas.width=w;canvas.height=h;clampOffsets();paint(ctx,w,h,$("safe").checked);
+}
+function setRatio(r){
+ ratio=r;offsetX=offsetY=0;for(const b of document.querySelectorAll("[data-ratio]"))b.setAttribute("aria-pressed",String(Number(b.dataset.ratio)===r));
+ render();$("status").textContent="비율 변경 완료 · 드래그로 위치를 조정할 수 있어.";
+}
+for(const b of document.querySelectorAll("[data-ratio]"))b.addEventListener("click",()=>setRatio(Number(b.dataset.ratio)));
+$("zoom").addEventListener("input",e=>{zoom=Number(e.target.value)/100;$("zoomText").textContent=e.target.value+"%";render();});
+$("safe").addEventListener("change",render);
+$("reset").addEventListener("click",()=>{zoom=1;offsetX=offsetY=0;$("zoom").value=100;$("zoomText").textContent="100%";render();$("status").textContent="크롭 위치와 확대를 초기화했어.";});
+canvas.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,ox:offsetX,oy:offsetY};canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener("pointermove",e=>{if(!drag)return;const r=canvas.getBoundingClientRect();offsetX=drag.ox+(e.clientX-drag.x)*canvas.width/r.width;offsetY=drag.oy+(e.clientY-drag.y)*canvas.height/r.height;render();});
+for(const ev of ["pointerup","pointercancel","lostpointercapture"])canvas.addEventListener(ev,()=>{drag=null;});
+file.addEventListener("change",e=>{
+ const f=e.target.files?.[0];if(!f)return;
+ if(f.size>15*1024*1024){$("status").textContent="15MB 이하 이미지를 선택해줘.";return;}
+ if(!["image/jpeg","image/png","image/webp"].includes(f.type)){$("status").textContent="PNG, JPG, WEBP만 가능해.";return;}
+ const url=URL.createObjectURL(f),img=new Image();
+ img.onload=()=>{if(sourceURL)URL.revokeObjectURL(sourceURL);sourceURL=url;image=img;offsetX=offsetY=0;zoom=1;$("zoom").value=100;$("zoomText").textContent="100%";render();$("status").textContent=f.name+" 로딩 완료 · 서버 업로드 없음.";};
+ img.onerror=()=>{URL.revokeObjectURL(url);$("status").textContent="이미지를 읽지 못했어. 다른 파일을 선택해줘.";};img.src=url;
+});
+$("download").addEventListener("click",()=>{
+ if(!image)return;
+ const [w,h]=dimensions(),factor=Math.max(1,Math.round(1200/w));
+ const out=document.createElement("canvas");out.width=w*factor;out.height=h*factor;
+ paint(out.getContext("2d"),out.width,out.height,false);
+ out.toBlob(blob=>{if(!blob){$("status").textContent="이미지 저장에 실패했어.";return;}
+ const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="crop-"+w+"x"+h+".png";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);$("status").textContent="PNG 저장 요청 완료 · 미리보기 가이드는 제외돼.";}, "image/png");
+});
+sample();
+</script></body></html>
