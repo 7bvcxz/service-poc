@@ -10,6 +10,7 @@
 const $=id=>document.getElementById(id);let items=[];
 const example={files:'blue-mug-front.jpg\nblue-mug-handle.jpg\nblue-mug-top.jpg',product:'세라믹 머그컵',features:'파란색, 350mL'};
 function clear(){items=[];$('rows').replaceChildren();$('results').hidden=true;$('error').textContent='';}
+for(const id of ['files','product','features'])$(id).addEventListener('input',()=>{if(items.length)clear();});
 $('sample').addEventListener('click',()=>{clear();$('files').value=example.files;$('product').value=example.product;$('features').value=example.features;generate();});
 $('reset').addEventListener('click',()=>{clear();['files','product','features'].forEach(id=>$(id).value='');$('files').focus();});
 $('clearResults').addEventListener('click',clear);
